@@ -33,6 +33,8 @@ public class ThreePhaseCommit {
 			System.exit(1);
 		}
 		
+		tpc.processScript();
+		
 		tpc.createProcesses(5);
 		
 		(tpc.nodes.get(0)).sendMsg(1,"zero to one");
@@ -66,10 +68,12 @@ public class ThreePhaseCommit {
 	public void readScript(String scriptFName) {
 		try {
 			BufferedReader scriptReader = new BufferedReader(new FileReader(new File(scriptFName)));
-			
-			// add read
-			
-				
+			String line = null;
+			do {
+				line = scriptReader.readLine();  
+				if (line != null)
+					script.add(line);
+			} while (line != null); 						
 			scriptReader.close();
 		} catch (FileNotFoundException e) {
 			System.err.println("Error reading script file "+scriptFName+".");
@@ -79,6 +83,16 @@ public class ThreePhaseCommit {
 			System.exit(3);
 		}
 		
+	}
+	
+	/*
+	 * Parse and process each string in the script.
+	 */
+	public void processScript() {
+
+		for (String s: script)
+			System.out.println(s); // for now just print
+
 	}
 	
 	/* recommended interface */
