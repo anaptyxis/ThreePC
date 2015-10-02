@@ -5,9 +5,16 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.Date;
 
 /**
  * DTLog
+ * 
+ * A DTLog entry is a String containing:
+ * 
+ *   "timestamp" "{add,remove,edit}" "1–3 parameters" "source" "destination"
+ * 
  * @author Bradley Beth
  *
  */
@@ -30,7 +37,24 @@ public class DTLog {
 		}
 	}
 	
-	public void writeEntry(String entry) {
+	public void writeEntry(String command, 
+						   String[] args, 
+						   int src, 
+						   int dest) {
+		
+		String entry = "";
+		Timestamp ts = new Timestamp(new Date().getTime());
+		entry += ts.toString() + " ";
+		entry += command + " ";
+		for (String arg : args) 
+			entry += arg + " ";
+		entry += String.valueOf(src) + " ";
+		entry += String.valueOf(dest) + " ";
+		writeEntry(entry);
+		
+	}
+	
+	private void writeEntry(String entry) {
 		try {
 			writer.write(entry);
 			writer.flush();
