@@ -18,6 +18,7 @@ public class Node {
 	private int viewNumber;
 	private int coordinator;
 	private DTLog dtLog;
+	private boolean running;   //only altered if process shuts down gracefully
 	
 	public Node(String configName, String dtL) {
 		try {
@@ -28,7 +29,7 @@ public class Node {
 		nc = new NetController(config);
 		playList = new Hashtable<String,String>();
 		dtLog = new DTLog(dtL);
-		
+		running = true;
 	}
 	
 	/*
@@ -88,7 +89,17 @@ public class Node {
 	public void shutdown() {
 		this.dtLog.close();
 		this.nc.shutdown();
+		running = false;
+	}
+
+	public int getID() {
+		return this.nc.getConfig().procNum;
 	}
 	
+	public static void main(String[] args) {
+		
+		Node n = new Node(args[0],args[1]);
+		while (n.running); //until graceful shutdown
+	}
 	
 }

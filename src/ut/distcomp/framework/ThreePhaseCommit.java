@@ -9,24 +9,23 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 
 /**
- * ThreePhaseCommit
+ * ThreePhaseCommit Controller
  * @author Bradley Beth
  *
  */
 public class ThreePhaseCommit {	
-	/// main ///
-	private int numNodes;
-	private ArrayList<Node> nodes;
+
+	private int numProcs;
+	private ArrayList<Process> procList;
 	private int coordinatorID;
 	private int viewNumber;
-	
 	private ArrayList<String> script;
 	
 	public static void main(String[] args) {
 	
 		ThreePhaseCommit tpc = new ThreePhaseCommit();
 		
-		if (args[0] != null)
+		if (args != null)
 			tpc.readScript(args[0]);
 		else {
 			System.err.println("ABORT: Please specify a script as the CLI argument.");
@@ -35,30 +34,23 @@ public class ThreePhaseCommit {
 		
 		tpc.processScript();
 		
-		tpc.createProcesses(5);
+		tpc.createProcesses(5);	
 		
-		(tpc.nodes.get(0)).sendMsg(1,"zero to one");
-		(tpc.nodes.get(3)).sendMsg(1,"three to one");
-		(tpc.nodes.get(4)).sendMsg(1,"four to one");
-			
-		
-		
+		//Give a little time for testing
 		try {
 			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		System.out.println((tpc.nodes.get(1)).retrieveMsgs());
 		
-		
-		for (Node n : tpc.nodes) 
-			n.shutdown();
+		tpc.kill(2);
+		tpc.killAll();
 		
 	}
 	
 	public ThreePhaseCommit() {
-		numNodes = 0;
-		nodes = new ArrayList<Node>();
+		numProcs = 0;
+		procList = new ArrayList<Process>();		
 		script = new ArrayList<String>();
 		viewNumber = 0;
 		coordinatorID = 0;
@@ -90,26 +82,49 @@ public class ThreePhaseCommit {
 	 */
 	public void processScript() {
 
+		System.out.println("SCRIPT\n======");
 		for (String s: script)
-			System.out.println(s); // for now just print
-
+			System.out.println("   "+s); //TODO: for now just print
+		System.out.println("======");
 	}
 	
 	/* recommended interface */
-	public void createProcesses(int n) {
-		numNodes = n;
-		for (int i = 0; i < numNodes; i++)
-			nodes.add(new Node("config"+i+".txt", 
-							   "DTLog"+i+".txt"));
+	public void createProcesses(int p) {
+		numProcs = p;
+		String classpath = System.getProperty("java.class.path");
+		for (int i = 0; i < numProcs; i++) {
+			System.out.println("3PC Controller: Starting process p"+i);
+			ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+i+".txt","DTLog"+i+".txt");
+			pb.inheritIO();
+			try {
+				procList.add(pb.start());
+			} catch (IOException e) {
+				System.err.println("Trouble starting process p"+i);
+				e.printStackTrace();
+			}
+		}			
 	}
 
 	public void kill(int procID) {
 	
-	
+		if (procList.get(procID) != null) {
+			System.out.println("3PC Controller: Killing process p"+procID);
+			procList.get(procID).destroy();
+			procList.set(procID, null);
+		}
+		
 	}
 
 	public void killAll() {
 		
+		System.out.print("3PC Controller: Killing ALL running processes: ");
+		for (int i = 0; i < procList.size(); i++) {
+		  if (procList.get(i) != null) {
+			  System.out.print("p"+i+"\t");
+			  procList.get(i).destroy();
+			  procList.set(i, null);
+		  }
+		}
 		
 	}
 

@@ -131,5 +131,9 @@ public class NetController {
         }
 		
 	}
+	
+	public Config getConfig() {
+		return config;
+	}
 
 }
