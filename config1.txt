@@ -1,0 +1,12 @@
+NumProcesses 5
+port0 53280
+port1 53281
+port2 53282
+port3 53283
+port4 53284
+host0 127.0.0.1
+host1 127.0.0.1
+host2 127.0.0.1
+host3 127.0.0.1
+host4 127.0.0.1
+procNum 1
