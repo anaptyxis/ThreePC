@@ -1,5 +1,9 @@
 package ut.distcomp.framework;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -11,12 +15,23 @@ import java.util.Hashtable;
  */
 public class ThreePhaseCommit {	
 	/// main ///
-	int numNodes;
-	ArrayList<Node> nodes;
+	private int numNodes;
+	private ArrayList<Node> nodes;
+	private int coordinatorID;
+	private int viewNumber;
+	
+	private ArrayList<String> script;
 	
 	public static void main(String[] args) {
 	
 		ThreePhaseCommit tpc = new ThreePhaseCommit();
+		
+		if (args[0] != null)
+			tpc.readScript(args[0]);
+		else {
+			System.err.println("ABORT: Please specify a script as the CLI argument.");
+			System.exit(1);
+		}
 		
 		tpc.createProcesses(5);
 		
@@ -34,15 +49,41 @@ public class ThreePhaseCommit {
 		System.out.println((tpc.nodes.get(1)).retrieveMsgs());
 		
 		
-		for (Node n : tpc.nodes)
+		for (Node n : tpc.nodes) 
 			n.shutdown();
+		
+	}
+	
+	public ThreePhaseCommit() {
+		numNodes = 0;
+		nodes = new ArrayList<Node>();
+		script = new ArrayList<String>();
+		viewNumber = 0;
+		coordinatorID = 0;
+		
+	}
+	
+	public void readScript(String scriptFName) {
+		try {
+			BufferedReader scriptReader = new BufferedReader(new FileReader(new File(scriptFName)));
+			
+			// add read
+			
+				
+			scriptReader.close();
+		} catch (FileNotFoundException e) {
+			System.err.println("Error reading script file "+scriptFName+".");
+			System.exit(2);
+		} catch (IOException e) {
+			System.err.println("Error closing script file "+scriptFName+".");
+			System.exit(3);
+		}
 		
 	}
 	
 	/* recommended interface */
 	public void createProcesses(int n) {
 		numNodes = n;
-		nodes = new ArrayList<Node>();
 		for (int i = 0; i < numNodes; i++)
 			nodes.add(new Node("config"+i+".txt", 
 							   "DTLog"+i+".txt"));
