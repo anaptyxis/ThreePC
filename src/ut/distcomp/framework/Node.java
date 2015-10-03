@@ -2,6 +2,7 @@ package ut.distcomp.framework;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class Node {
 	private Hashtable<String,String> playList;
 	private int viewNumber;
 	private int coordinator;
+	private HashSet<Integer> up;
 	private DTLog dtLog;
 	private boolean running;   //only altered if process shuts down gracefully
 	
@@ -28,6 +30,7 @@ public class Node {
 		}
 		nc = new NetController(config);
 		playList = new Hashtable<String,String>();
+		up = new HashSet<Integer>();
 		dtLog = new DTLog(dtL);
 		running = true;
 	}

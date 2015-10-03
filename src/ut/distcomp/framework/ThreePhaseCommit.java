@@ -18,7 +18,7 @@ public class ThreePhaseCommit {
 	private int numProcs;
 	private ArrayList<Process> procList;
 	private int coordinatorID;
-	private int viewNumber;
+	private int lastKilledID;
 	private ArrayList<String> script;
 	
 	public static void main(String[] args) {
@@ -33,9 +33,7 @@ public class ThreePhaseCommit {
 		}
 		
 		tpc.processScript();
-		
-		tpc.createProcesses(5);	
-		
+				
 		//Give a little time for testing
 		try {
 			Thread.sleep(5000);
@@ -43,16 +41,12 @@ public class ThreePhaseCommit {
 			e.printStackTrace();
 		}
 		
-		tpc.kill(2);
-		tpc.killAll();
-		
 	}
 	
 	public ThreePhaseCommit() {
 		numProcs = 0;
 		procList = new ArrayList<Process>();		
 		script = new ArrayList<String>();
-		viewNumber = 0;
 		coordinatorID = 0;
 		
 	}
@@ -83,8 +77,50 @@ public class ThreePhaseCommit {
 	public void processScript() {
 
 		System.out.println("SCRIPT\n======");
-		for (String s: script)
-			System.out.println("   "+s); //TODO: for now just print
+		for (String s: script) {
+			System.out.println(">> "+s); //TODO: for now just print
+			String[] strArr = (s.trim()).split(" ");
+			if (strArr[0].equals("createProcesses")) {
+				int arg = Integer.parseInt(strArr[1]);
+				createProcesses(arg);			
+			}
+			if (strArr[0].equals("kill")) {
+				int arg = Integer.parseInt(strArr[1]);
+				kill(arg);			
+			}
+			if (strArr[0].equals("killAll")) {
+				killAll();				
+			}
+			if (strArr[0].equals("killLeader")) {
+				killLeader();				
+			}
+			if (strArr[0].equals("revive")) {
+				int arg = Integer.parseInt(strArr[1]);
+				revive(arg);							
+			}
+			if (strArr[0].equals("reviveLast")) {
+				reviveLast();				
+			}
+			if (strArr[0].equals("reviveAll")) {
+				reviveAll();				
+			}
+			if (strArr[0].equals("partialMessage")) {
+				int arg1 = Integer.parseInt(strArr[1]);
+				int arg2 = Integer.parseInt(strArr[2]);
+				partialMessage(arg1, arg2);											
+			}
+			if (strArr[0].equals("resumeMessages")) {
+				int arg = Integer.parseInt(strArr[1]);
+				resumeMessages(arg);										
+			}
+			if (strArr[0].equals("allClear")) {
+				allClear();
+			}
+			if (strArr[0].equals("rejectNextChange")) {
+				int arg = Integer.parseInt(strArr[1]);
+				rejectNextChange(arg);												
+			}
+		}
 		System.out.println("======");
 	}
 	
@@ -106,13 +142,12 @@ public class ThreePhaseCommit {
 	}
 
 	public void kill(int procID) {
-	
+		
 		if (procList.get(procID) != null) {
 			System.out.println("3PC Controller: Killing process p"+procID);
 			procList.get(procID).destroy();
 			procList.set(procID, null);
 		}
-		
 	}
 
 	public void killAll() {
@@ -125,47 +160,68 @@ public class ThreePhaseCommit {
 			  procList.set(i, null);
 		  }
 		}
-		
+		System.out.println();
 	}
 
 	public void killLeader() {
 		
+		System.out.print("3PC Controller: Killing LEADER process——>");
+		this.kill(coordinatorID);
 		
 	}
 
 	public void revive(int procID) {
 		
+		//TODO: recreate Process
+		//TODO: Process will have to determine its state through log
 		
 	}
 
 	public void reviveLast() {
-		
+
+		System.out.print("3PC Controller: Reviving LAST killed process p——>");
+		this.revive(lastKilledID); 
 		
 	}
 
 	public void reviveAll() {
+
+/*		System.out.print("3PC Controller: Reviving ALL dead processes: ");
+		for (int i = 0; i < procList.size(); i++) {
+		  if (procList.get(i) != null) {
+			  System.out.print("p"+i+"\t");
+			  procList.get(i).destroy();
+			  procList.set(i, null);
+		  }
+		}
+		System.out.println();
+*/
 		
 		
 	}
 
-	public void partialMessages(int procID, int numMsgs) {
+	public void partialMessage(int procID, int numMsgs) {
 		
+		//TODO
 		
 	}
 	
 	public void resumeMessages(int procID) {
 		
+		//TODO
 		
 	}
 	
 	public void allClear() {
 		
+		//TODO
 		
 	}
 
 	public void rejectNextChange(int procID) {
-		
-		
+		 
+		//TODO
+
 	}
 
 	
