@@ -42,7 +42,6 @@ public class Node {
 		}
 		nc = new NetController(config);
 		playList = new Hashtable<String,String>();
-		up = new HashSet<Integer>();
 		dtLog = new DTLog(dtL);
 		running = true;
 		
