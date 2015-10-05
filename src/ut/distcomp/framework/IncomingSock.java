@@ -26,7 +26,6 @@ public class IncomingSock extends Thread {
 	protected IncomingSock(Socket sock) throws IOException {
 		this.sock = sock;
 		in = new BufferedInputStream(sock.getInputStream());
-		//in = sock.getInputStream();
 		sock.shutdownOutput();
 		queue = new ConcurrentLinkedQueue<String>();
 	}
