@@ -73,7 +73,8 @@ public class Node {
 		if ((playList.contains(songName)) || (playList.contains(newSongName)))
 			return false;
 		else {
-			playList.replace(songName, newSongURL);
+			playList.remove(songName);
+			playList.put(newSongName, newSongURL);
 			if (!songName.equals(newSongName))
 				playList.put(newSongName, (playList.remove(songName)));
 			return true;
