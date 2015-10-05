@@ -477,7 +477,7 @@ public class Node {
 	 * 
 	 */
 	
-	private TransitionMsg terminationProtocol(StateAC myState, List<MessageParser> list ) {
+	private TransitionMsg terminationRule(StateAC myState, List<MessageParser> list ) {
         
         TransitionMsg termination_decision = null;
         if(list.isEmpty()) {
