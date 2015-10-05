@@ -105,21 +105,6 @@ public class Node {
 	}
 	
 	
-	/*
-	 * Process Received Message
-	 * If coordinator, execute process received message as coordinator
-	 * If Participant, execute process received message as participant
-	*/
-	public void processReceivedMsg(String m) {
-        //return this.nc.getReceivedMsgs();
-        
-             if(myID == coordinator){
-                    processReceivedMsgAscoordinator(m);
-             }else{
-                    processReceivedMsgAsParticipant(m);
-             }
-       
-    }
 
     /*
     * Process received message as coordinator
@@ -412,28 +397,29 @@ public class Node {
 	 * Get message using polling when there is no failure
 	 */
 	
-	private void getMessagePolling() throws InterruptedException{
+	private void getMessageAsCoordinate() throws InterruptedException{
 		 while(true){
              List<String> messages = null;
              long startTime = (System.currentTimeMillis()+timeout);
              long smallTimeout = timeout/10;
 
-             // receive message until timeout
+             // receive message until timeout and there is no failure
              while(System.currentTimeMillis() < startTime) {
                  Thread.sleep(smallTimeout);
                  messages = (nc.getReceivedMsgs());
                 
                  for(String m:messages) {
-                    
+                    processReceivedMsgAscoordinator(m);
                	   
                     
                  }
              }
              
-             
              // There is no comming message
              if(messages.isEmpty()){
-            	 
+            	  
+            	  System.out.println("Ohh, seems failure happens");
+            	  break;
              }
 		 }
 	}
@@ -443,13 +429,13 @@ public class Node {
 	 * Time out action when there is a failure
 	 * 
 	 */
-	 private Queue<MessageParser> getMessagesUntilTimeOut() throws InterruptedException {
+	 private List<MessageParser> getMessagesAsCilent() throws InterruptedException {
 
           
 
           while(true){
               List<String> messages;
-              Queue<MessageParser> parsers = null;
+              List<MessageParser> parsers = null;
               long startTime = (System.currentTimeMillis()+timeout);
               long smallTimeout = timeout/10;
 
