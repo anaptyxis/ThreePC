@@ -12,6 +12,8 @@ public class MessageParser {
     private String song;
     private String url;
     private String messageHeader;
+    private HashSet<Integer> upSet;
+
 
     public MessageParser(){
 
@@ -54,10 +56,49 @@ public class MessageParser {
         } else {
             messageHeader = split_input[4];
         }
-
+        if(split_input.length < 6) {
+            upSet = new HashSet<Integer>();
+        } else {
+            initHashSet(split_input[5]);
+        }
 
     }
+    
+    public void initHashSet(String input) {
+        input = input.replace("[", "") ;
+        input = input.replace("]", "") ;
+        input = input.replaceAll(" ", "");
 
+        String[] items=input.split(",");
+        upSet = new HashSet<Integer>();
+
+        for(String item: items) {
+            upSet.add(Integer.valueOf(Integer.parseInt(item)));
+        }
+    }
+    
+
+    public String composeWithUpset() {
+        String result;
+
+        if(instruction.equalsIgnoreCase("edit")) {
+            result = source + DELIMITER + instruction + DELIMITER + old_song + DELIMITER1 + song + DELIMITER +
+                        url + DELIMITER + messageHeader + DELIMITER + upSet.toString();
+        } else {
+            result = source + DELIMITER + instruction + DELIMITER + song + DELIMITER + url + DELIMITER +
+                        messageHeader + DELIMITER + upSet.toString();
+        }
+
+        return result;
+    }
+
+    public void setUpSet(HashSet<Integer> list) {
+        upSet = list;
+    }
+
+    public HashSet<Integer> getUpSet() {
+        return upSet;
+    }
 
 
     public String getTransaction() {

@@ -29,7 +29,9 @@ public class Node {
     private StateAC myState = StateAC.IDLE;
     private ArrayList<Integer> DecisionList=new ArrayList<Integer>(viewNumber);
     private ArrayList<Integer> ACKList=new ArrayList<Integer>(viewNumber);
+    private HashSet<Integer> upSet;
 	
+    private int timeout = 2000;
 	public Node(String configName, String dtL) {
 		try {
 			config = new Config(configName);

@@ -13,7 +13,9 @@ package ut.distcomp.framework;
         COMMIT,
         ABORT,
         YES,
-        NO;
+        NO,
+        STATE_REQ,
+        RECOVER_REQ;
 
 
         private String string;
@@ -27,7 +29,9 @@ package ut.distcomp.framework;
             ABORT.string="abort";
             YES.string="yes";
             NO.string="no";
-        }
+            STATE_REQ.string ="state_req";
+            RECOVER_REQ.string = "recover_req"
+;        }
         public String toString() {
             return string;
         }
