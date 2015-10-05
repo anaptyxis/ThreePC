@@ -374,15 +374,15 @@ public class Node {
 
 
 	public int getID() {
-		return this.nc.getConfig().procNum;
+		return nc.getConfig().procNum;
 	}
 	
 	public int getNumProcesses() {
-		return this.nc.getConfig().numProcesses;
+		return nc.getConfig().numProcesses;
 	}
 	
 	public int getTimeOut() {
-		return this.nc.getConfig().timeOut;
+		return nc.getConfig().timeOut;
 	}
 	  
 	private StateAC getParticiapntState(){
