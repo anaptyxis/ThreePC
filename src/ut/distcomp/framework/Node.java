@@ -27,7 +27,6 @@ public class Node {
     private ArrayList<Integer> ACKList=new ArrayList<Integer>(viewNumber);
     private HashSet<Integer> upSet;
 	
-    private int timeout = 2000;
 	public Node(String configName, String dtL) {
 		try {
 			config = new Config(configName);
@@ -398,10 +397,10 @@ public class Node {
 	private void getMessageAsCoordinate() throws InterruptedException{
 		 while(true){
              List<String> messages = null;
-             long startTime = (System.currentTimeMillis()+timeout);
-             long smallTimeout = timeout/10;
+             long startTime = (System.currentTimeMillis()+getTimeOut());
+             long smallTimeout = getTimeOut()/10;
 
-             // receive message until timeout and there is no failure
+             // receive message until getTimeOut() and there is no failure
              while(System.currentTimeMillis() < startTime) {
                  Thread.sleep(smallTimeout);
                  messages = (nc.getReceivedMsgs());
@@ -434,8 +433,8 @@ public class Node {
           while(true){
               List<String> messages;
               List<MessageParser> parsers = null;
-              long startTime = (System.currentTimeMillis()+timeout);
-              long smallTimeout = timeout/10;
+              long startTime = (System.currentTimeMillis()+getTimeOut());
+              long smallTimeout = getTimeOut()/10;
 
               while(System.currentTimeMillis() < startTime) {
                   Thread.sleep(smallTimeout);
