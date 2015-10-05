@@ -16,7 +16,7 @@ package ut.distcomp.framework;
         NO,
         STATE_REQ,
         STATE_RES,
-        ELECTION,
+        UR_ELECTED,
         RECOVER_REQ;
 
 
@@ -33,7 +33,7 @@ package ut.distcomp.framework;
             NO.string="no";
             STATE_REQ.string ="state_req";
             STATE_RES.string ="state_res";
-            ELECTION.string = "election";
+            UR_ELECTED.string = "ur_elected";
             RECOVER_REQ.string = "recover_req"
 ;        }
         public String toString() {

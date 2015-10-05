@@ -7,6 +7,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Queue;
 
+import android.R.integer;
+
 //import android.R.bool;
 //import android.R.integer;
 //import android.net.NetworkInfo.State;
@@ -23,7 +25,6 @@ public class Node {
 	private Hashtable<String,String> playList;
 	private int viewNumber;
 	private int coordinator;
-	private HashSet<Integer> up;
 	private DTLog dtLog;
 	private boolean running;   //only altered if process shuts down gracefully
 	private static int myID;
@@ -104,6 +105,12 @@ public class Node {
 		}
 	}
 	
+	
+	/*
+	 * Process Received Message
+	 * If coordinator, execute process received message as coordinator
+	 * If Participant, execute process received message as participant
+	*/
 	public void processReceivedMsg(String m) {
         //return this.nc.getReceivedMsgs();
         
@@ -116,7 +123,7 @@ public class Node {
     }
 
     /*
-    * Process received message as coordinate
+    * Process received message as coordinator
     */
     private void processReceivedMsgAscoordinator(String message){
         MessageParser parser = new MessageParser(message);
@@ -135,7 +142,7 @@ public class Node {
         	  int source = Integer.parseInt(parser.getSource());
         	  DecisionList.set(source, 1);
         }
-
+        // receive Vote_NO
         else if( parser.getMessageHeader().toString().equals(TransitionMsg.NO.toString())){
         	  int source = Integer.parseInt(parser.getSource());
         	  DecisionList.set(source, -1);
@@ -215,7 +222,8 @@ public class Node {
 
     /*
      * Playlist Vote action 
-     * 
+     * Input action is add edit, and delete
+     * output will be Vote Yes and vote No
     */
     
     private void playlistVoteAction(MessageParser parser){
@@ -386,23 +394,7 @@ public class Node {
     }
 
 
-    /*
-    * Sending messsage
-    */
 
-	public void sendMsg(int procID, String msg) {
-		this.nc.sendMsg(procID, msg);
-	}
-	
-	public List<String> retrieveMsgs() {
-		return this.nc.getReceivedMsgs();
-	}
-	
-	public void shutdown() {
-		this.dtLog.close();
-		this.nc.shutdown();
-		running = false;
-	}
 
 	public int getID() {
 		return this.nc.getConfig().procNum;
@@ -549,12 +541,32 @@ public class Node {
 	 * Election Protocal
 	 * 
 	 */
-	private int electionProtocol(){
-		
-		coordinator =  (coordinator+1) % viewNumber;
+	private int electionProtocol(MessageParser parser){
+		parser.setSource(Integer.toString(myID));
+		int newC = Integer.MAX_VALUE;
+		for(int m : upSet){
+			newC = Math.min(newC, m);
+		}
+		// if I am the new coordinator
+		if(newC == myID) coordinator=myID;
+		else {
+		     sendURElectedMsg(myState, parser, newC);
+		}
 		return coordinator;
 	}
 	
+	/*
+	 * 
+	 * Send you are elected message
+	 * 
+	 */
+	
+	 private void sendURElectedMsg(StateAC participantState, MessageParser pmRequest, int destProcNum ){
+         
+		 pmRequest.setMessageHeader(TransitionMsg.UR_ELECTED.toString());
+         String stRequest = pmRequest.composeMessage();
+         nc.sendMsg(destProcNum, stRequest);
+     }
 	
 	/*
 	 * 
@@ -594,6 +606,25 @@ public class Node {
 	        }
 	 }
 	 
+	 /*
+	  * 
+	  * Basic send and receive and shutdown function
+	  * 
+	  */
+
+	  public void sendMsg(int procID, String msg) {
+			this.nc.sendMsg(procID, msg);
+	  }
+		
+	  public List<String> retrieveMsgs() {
+			return this.nc.getReceivedMsgs();
+	  }
+		
+	  public void shutdown() {
+			this.dtLog.close();
+			this.nc.shutdown();
+			running = false;
+	  }
 	 
 	 /*
 	  * 
