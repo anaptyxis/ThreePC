@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 
+import android.net.NetworkInfo.State;
+
 /**
  * Node
  * @author Bradley Beth
@@ -22,7 +24,7 @@ public class Node {
 	private DTLog dtLog;
 	private boolean running;   //only altered if process shuts down gracefully
 	private int myID;
-    private State myState = State.IDLE;
+    private StateAC myState = StateAC.IDLE;
     private ArrayList<Integer> DecisionList=new ArrayList<Integer>(viewNumber);
     private ArrayList<Integer> ACKList=new ArrayList<Integer>(viewNumber);
 	
@@ -99,9 +101,7 @@ public class Node {
     }
 
     /*
-    *
     * Process received message as coordinate
-    *
     */
     private void processReceivedMsgAscoordinator(String message){
         MessageParser parser = new MessageParser(message);
@@ -145,12 +145,17 @@ public class Node {
                             parser.setMessageHeader(TransitionMsg.YES.toString());
                             parser.setSource(Integer.toString(myID));
                             sendMsg(coordinator,parser.composeMessage());
+                            dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
+                            myState = StateAC.UNCERTAIN;
                         }
                         //vote no
                         else{
                             parser.setMessageHeader(TransitionMsg.NO.toString());
                             parser.setSource(Integer.toString(myID));
                             sendMsg(coordinator,parser.composeMessage());
+                            dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
+                            myState = StateAC.ABORT;
+
                         }
                 }
                 //request for add
@@ -161,12 +166,16 @@ public class Node {
                            parser.setMessageHeader(TransitionMsg.YES.toString());
                            parser.setSource(Integer.toString(myID));
                            sendMsg(coordinator,parser.composeMessage());
+                           dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
+                           myState = StateAC.UNCERTAIN;
                        }
                        //vote no
                        else{
                            parser.setMessageHeader(TransitionMsg.NO.toString());
                            parser.setSource(Integer.toString(myID));
                            sendMsg(coordinator,parser.composeMessage());
+                           dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
+                           myState = StateAC.ABORT;
 
                        }
                 }
@@ -178,12 +187,16 @@ public class Node {
                            parser.setMessageHeader(TransitionMsg.YES.toString());
                            parser.setSource(Integer.toString(myID));
                            sendMsg(coordinator,parser.composeMessage());
+                           dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
+                           myState =StateAC.UNCERTAIN;
                        }
                        //vote no
                        else{
                            parser.setMessageHeader(TransitionMsg.NO.toString());
                            parser.setSource(Integer.toString(myID));
                            sendMsg(coordinator,parser.composeMessage());
+                           dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
+                           myState = StateAC.ABORT;
                        }
                 }
                 // wrong vote request
@@ -201,6 +214,8 @@ public class Node {
                 parser.setMessageHeader(TransitionMsg.ACK.toString());
                 parser.setSource(Integer.toString(myID));
                 sendMsg(coordinator,parser.composeMessage());
+                dtLog.writeEntry(TransitionMsg.ACK, parser.getTransaction(), null, myID, coordinator);
+                myState = StateAC.COMMITABLE;
         }
 
         //Receive commit message
@@ -212,6 +227,8 @@ public class Node {
                    String oldsong = parser.getOldSong();
                    String url = parser.getUrl();
                    edit(oldsong,newsong,url);
+                   dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
+                   myState = StateAC.COMMIT;
 
             }
             //commit for add
@@ -219,11 +236,15 @@ public class Node {
                     String song = parser.getSong();
                     String url = parser.getUrl();
                     add(song, url);
+                    dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
+                    myState = StateAC.COMMIT;
             }
             // commit for delete
             else if (parser.getInstruction().equalsIgnoreCase("del")){
                     String song = parser.getSong();
                     remove(song);
+                    dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
+                    myState = StateAC.COMMIT;
             }
             // wrong vote request
             else{
@@ -235,6 +256,8 @@ public class Node {
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.ABORT.toString())){
                 // log the message
+        		dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
+        		myState = StateAC.ABORT;
         }
 
         // Receive Wrong Message

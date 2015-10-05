@@ -5,8 +5,9 @@ package ut.distcomp.framework;
  */
 
  public enum TransitionMsg {
+	    CHANGE_REQ,
+        START_3PC,
         VOTE_REQ,
-        VOTE,
         PRECOMMIT,
         ACK,
         COMMIT,
@@ -17,8 +18,9 @@ package ut.distcomp.framework;
 
         private String string;
         static {
+        	CHANGE_REQ.string = "change_req";
+            START_3PC.string= "start_3pc";
             VOTE_REQ.string="vote_req";
-            VOTE.string="vote";
             PRECOMMIT.string="precommit";
             ACK.string="ack";
             COMMIT.string="commit";
