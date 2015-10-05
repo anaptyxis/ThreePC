@@ -377,6 +377,10 @@ public class Node {
 		return this.nc.getConfig().procNum;
 	}
 	
+	public int getNumProcesses() {
+		return this.nc.getConfig().numProcesses;
+	}
+	
 	public int getTimeOut() {
 		return this.nc.getConfig().timeOut;
 	}
