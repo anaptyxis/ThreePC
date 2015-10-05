@@ -2,11 +2,17 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c6e8adcf-63a9-46b3-8685-d4651acaeccc" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.classpath" afterPath="$PROJECT_DIR$/.classpath" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ut/distcomp/framework/DTLog.java" afterPath="$PROJECT_DIR$/src/ut/distcomp/framework/DTLog.java" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/src/ut/distcomp/framework/script1.txt" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bin/ut/distcomp/framework/Node$1.class" afterPath="$PROJECT_DIR$/bin/ut/distcomp/framework/Node$1.class" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bin/ut/distcomp/framework/Node.class" afterPath="$PROJECT_DIR$/bin/ut/distcomp/framework/Node.class" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DTLog0.txt" afterPath="$PROJECT_DIR$/DTLog0.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ut/distcomp/framework/Node.java" afterPath="$PROJECT_DIR$/src/ut/distcomp/framework/Node.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.settings/org.eclipse.jdt.core.prefs" afterPath="$PROJECT_DIR$/.settings/org.eclipse.jdt.core.prefs" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/config0.txt" afterPath="$PROJECT_DIR$/config0.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/config1.txt" afterPath="$PROJECT_DIR$/config1.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/config2.txt" afterPath="$PROJECT_DIR$/config2.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/config3.txt" afterPath="$PROJECT_DIR$/config3.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/config4.txt" afterPath="$PROJECT_DIR$/config4.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ThreePC.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -70,11 +76,14 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="Node.java" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="Node.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/ut/distcomp/framework/Node.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="19" column="30" selection-start="353" selection-end="353" vertical-scroll-proportion="0.111248456" vertical-offset="180" max-vertical-offset="11358">
-              <folding />
+            <state line="404" column="51" selection-start="13057" selection-end="13057" vertical-scroll-proportion="-13.107142" vertical-offset="6761" max-vertical-offset="11340">
+              <folding>
+                <element signature="e#612#621#0" expanded="true" />
+                <element signature="e#679#688#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -88,46 +97,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="DTLog0.txt" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="DTLog0.txt" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/DTLog0.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="2" column="0" selection-start="141" selection-end="141" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="144">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="DTLog1.txt" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/DTLog1.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="108">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="DTLog2.txt" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/DTLog2.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="108">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="DTLog3.txt" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/DTLog3.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="108">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="DTLog4.txt" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/DTLog4.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="108">
+            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="822">
               <folding />
             </state>
           </provider>
@@ -149,6 +122,12 @@
         <option value="$PROJECT_DIR$/DTLog0.txt" />
         <option value="$PROJECT_DIR$/src/ut/distcomp/framework/DTLog.java" />
         <option value="$PROJECT_DIR$/src/ut/distcomp/framework/Node.java" />
+        <option value="$PROJECT_DIR$/script1.txt" />
+        <option value="$PROJECT_DIR$/config0.txt" />
+        <option value="$PROJECT_DIR$/config1.txt" />
+        <option value="$PROJECT_DIR$/config2.txt" />
+        <option value="$PROJECT_DIR$/config3.txt" />
+        <option value="$PROJECT_DIR$/config4.txt" />
       </list>
     </option>
   </component>
@@ -505,20 +484,6 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/ut/distcomp/framework/DTLog.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="54" column="22" selection-start="1281" selection-end="1281" vertical-scroll-proportion="0.0" vertical-offset="288" max-vertical-offset="1620">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/DTLog0.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="2" column="0" selection-start="141" selection-end="141" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="144">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/DTLog1.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="822">
@@ -540,6 +505,13 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/script1.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="17" selection-start="17" selection-end="17" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="796">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/DTLog4.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="822">
@@ -547,9 +519,61 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/config4.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="10" selection-start="10" selection-end="10" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="822">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config3.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="10" selection-start="10" selection-end="10" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="822">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config2.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="10" selection-start="10" selection-end="10" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="822">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config1.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="10" selection-start="10" selection-end="10" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="822">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config0.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="10" selection-start="10" selection-end="10" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="822">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/ut/distcomp/framework/Node.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="19" column="30" selection-start="353" selection-end="353" vertical-scroll-proportion="0.111248456" vertical-offset="180" max-vertical-offset="11358">
+        <state line="404" column="51" selection-start="13057" selection-end="13057" vertical-scroll-proportion="-13.107142" vertical-offset="6761" max-vertical-offset="11340">
+          <folding>
+            <element signature="e#612#621#0" expanded="true" />
+            <element signature="e#679#688#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ut/distcomp/framework/DTLog.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="54" column="22" selection-start="1281" selection-end="1281" vertical-scroll-proportion="0.0" vertical-offset="288" max-vertical-offset="1620">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DTLog0.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="108">
           <folding />
         </state>
       </provider>

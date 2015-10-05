@@ -1,4 +1,4 @@
-TimeOut 100
+TimeOut 2000
 NumProcesses 5
 port0 53280
 port1 53281

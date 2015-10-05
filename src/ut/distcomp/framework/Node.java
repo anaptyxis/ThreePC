@@ -23,8 +23,8 @@ public class Node {
 	private boolean running;   //only altered if process shuts down gracefully
 	private int myID;
     private StateAC myState = StateAC.IDLE;
-    private ArrayList<Integer> DecisionList=new ArrayList<Integer>(viewNumber);
-    private ArrayList<Integer> ACKList=new ArrayList<Integer>(viewNumber);
+    private ArrayList<Integer> DecisionList = new ArrayList<Integer>();
+    private ArrayList<Integer> ACKList = new ArrayList<Integer>();
     private HashSet<Integer> upSet;
 	
 	public Node(String configName, String dtL) {
@@ -37,16 +37,15 @@ public class Node {
 		playList = new Hashtable<String,String>();
 		dtLog = new DTLog(dtL);
 		running = true;
-		
-		
+        viewNumber = 5;
 		myID = getID();
 		for(int i = 0 ; i < viewNumber; i++){
 			if(i!=myID){
-				DecisionList.set(i, 0);
-				ACKList.set(i, 0);
+				DecisionList.add(0);
+				ACKList.add(0);
 			}else{
-				DecisionList.set(i, 1);
-				ACKList.set(i, 1);
+				DecisionList.add(1);
+				ACKList.add(1);
 			}
 		}
 	}
