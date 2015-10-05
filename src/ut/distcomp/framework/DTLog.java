@@ -48,10 +48,11 @@ public class DTLog {
 		entry += transition +" ";
 		entry += ts.toString() + " ";
 		entry += command + " ";
-		for (String arg : args) 
-			entry += arg + " ";
+		//for (String arg : args)
+		//	entry += arg + " ";
 		entry += String.valueOf(src) + " ";
 		entry += String.valueOf(dest) + " ";
+        entry += "\n";
 		writeEntry(entry);
 		
 	}
