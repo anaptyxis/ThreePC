@@ -34,13 +34,6 @@ public class ThreePhaseCommit {
 		
 		tpc.processScript();
 				
-		//Give a little time for testing
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
 	}
 	
 	public ThreePhaseCommit() {
@@ -128,6 +121,16 @@ public class ThreePhaseCommit {
 				int arg = Integer.parseInt(strArr[1]);
 																
 			}
+			if (strArr[0].equals("wait")) {
+				int arg = Integer.parseInt(strArr[1]);
+				try {
+					Thread.sleep(arg*1000);		//wait arg seconds
+				} catch (InterruptedException e) {
+					System.err.println("Error putting thread to sleep.");
+					e.printStackTrace();
+				}											
+			}
+
 		}
 		System.out.println("======");
 	}
@@ -173,7 +176,7 @@ public class ThreePhaseCommit {
 
 	public void killLeader() {
 		
-		System.out.print("3PC Controller: Killing LEADER process������>");
+		System.out.print("3PC Controller: Killing LEADER process------>");
 		this.kill(coordinatorID);
 		
 	}

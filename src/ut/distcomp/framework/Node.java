@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 
-import android.R.bool;
-import android.R.integer;
-import android.net.NetworkInfo.State;
+//import android.R.bool;
+//import android.R.integer;
+//import android.net.NetworkInfo.State;
 
 /**
  * Node
