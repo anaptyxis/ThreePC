@@ -28,6 +28,7 @@ public class Config {
 
 		Properties prop = new Properties();
 		prop.load(new FileInputStream(filename));
+		timeOut = loadInt(prop,"TimeOut");
 		numProcesses = loadInt(prop,"NumProcesses");
 		addresses = new InetAddress[numProcesses];
 		ports = new int[numProcesses];
@@ -67,7 +68,12 @@ public class Config {
 	 * Total number of hosts
 	 */
 	public int numProcesses;
-	
+
+	/**
+	 * Timeout in ms
+	 */
+	public int timeOut;
+		
 	/**
 	 * This hosts number (should correspond to array above).  Each host should have a different number.
 	 */

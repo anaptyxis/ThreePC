@@ -26,7 +26,7 @@ public class ThreePhaseCommit {
 		ThreePhaseCommit tpc = new ThreePhaseCommit();
 		
 		if (args != null)
-			tpc.readScript(args[0]);
+			tpc.readScript(args[0]);	//read in controller script
 		else {
 			System.err.println("ABORT: Please specify a script as the CLI argument.");
 			System.exit(1);
@@ -190,7 +190,7 @@ public class ThreePhaseCommit {
 
 	public void reviveLast() {
 
-		System.out.print("3PC Controller: Reviving LAST killed process p������>");
+		System.out.print("3PC Controller: Reviving LAST killed process p------>");
 		this.revive(lastKilledID); 
 		
 	}

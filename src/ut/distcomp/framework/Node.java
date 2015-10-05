@@ -7,12 +7,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Queue;
 
-import android.R.integer;
-
-//import android.R.bool;
-//import android.R.integer;
-//import android.net.NetworkInfo.State;
-
 /**
  * Node
  * @author Bradley Beth
@@ -384,6 +378,10 @@ public class Node {
 		return this.nc.getConfig().procNum;
 	}
 	
+	public int getTimeOut() {
+		return this.nc.getConfig().timeOut;
+	}
+	  
 	private StateAC getParticiapntState(){
 		if(myID != coordinator) 
 			return myState;
