@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Queue;
+
 
 /**
  * Node
@@ -17,11 +17,11 @@ public class Node {
 	private Config config;
 	private NetController nc;
 	private Hashtable<String,String> playList;
-	private int viewNumber;
-	private int coordinator;
+	private int viewNumber = 5;
+	private static int coordinator = 0;
 	private DTLog dtLog;
 	private boolean running;   //only altered if process shuts down gracefully
-	private static int myID;
+	private int myID;
     private StateAC myState = StateAC.IDLE;
     private ArrayList<Integer> DecisionList=new ArrayList<Integer>(viewNumber);
     private ArrayList<Integer> ACKList=new ArrayList<Integer>(viewNumber);
@@ -394,7 +394,7 @@ public class Node {
 	 * Get message using polling when there is no failure
 	 */
 	
-	private void getMessageAsCoordinate() throws InterruptedException{
+	private void getMessageAsCoordinator() throws InterruptedException{
 		 while(true){
              List<String> messages = null;
              long startTime = (System.currentTimeMillis()+getTimeOut());
@@ -407,7 +407,7 @@ public class Node {
                 
                  for(String m:messages) {
                     processReceivedMsgAscoordinator(m);
-               	   
+               	    //System.out.println("I am Here");
                     
                  }
              }
@@ -426,7 +426,7 @@ public class Node {
 	 * Time out action when there is a failure
 	 * 
 	 */
-	 private List<MessageParser> getMessagesAsCilent() throws InterruptedException {
+	 private List<MessageParser> getMessagesAsParticipant() throws InterruptedException {
 
           
 
@@ -615,13 +615,19 @@ public class Node {
 	  * 
 	  * 
 	  */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		
 		Node n = new Node(args[0],args[1]);
-		MessageParser parser= new MessageParser( Integer.toString(myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
+        System.out.println(n.myID);
+		MessageParser parser= new MessageParser( Integer.toString(n.myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
 		
-		if(myID==1)
+		if(n.myID==1)
 			n.sendMsg(0,parser.composeMessage());
+
+        if(n.myID == coordinator)
+           n.getMessageAsCoordinator();
+        else
+           n.getMessagesAsParticipant();
 		
 	}
 	

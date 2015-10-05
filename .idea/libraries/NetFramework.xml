@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="NetFramework">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/NetFramework.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
