@@ -15,6 +15,8 @@ package ut.distcomp.framework;
         YES,
         NO,
         STATE_REQ,
+        STATE_RES,
+        ELECTION,
         RECOVER_REQ;
 
 
@@ -30,6 +32,8 @@ package ut.distcomp.framework;
             YES.string="yes";
             NO.string="no";
             STATE_REQ.string ="state_req";
+            STATE_RES.string ="state_res";
+            ELECTION.string = "election";
             RECOVER_REQ.string = "recover_req"
 ;        }
         public String toString() {

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Queue;
 
 //import android.R.bool;
 //import android.R.integer;
@@ -103,17 +104,15 @@ public class Node {
 		}
 	}
 	
-	public void processReceivedMsg() {
+	public void processReceivedMsg(String m) {
         //return this.nc.getReceivedMsgs();
-        List<String> messages = (nc.getReceivedMsgs());
-
-        for (String m : messages){
+        
              if(myID == coordinator){
                     processReceivedMsgAscoordinator(m);
              }else{
                     processReceivedMsgAsParticipant(m);
              }
-        }
+       
     }
 
     /*
@@ -146,7 +145,12 @@ public class Node {
         	 int source = Integer.parseInt(parser.getSource());
         	 ACKList.set(source, 1);
         }
-
+        
+        // receive STATE response
+        else if (parser.getMessageHeader().toString().equals(TransitionMsg.STATE_RES.toString())){
+        	 
+        }
+        //wrong message
         else{
 
         }
@@ -210,6 +214,118 @@ public class Node {
     }
 
     /*
+     * Playlist Vote action 
+     * 
+    */
+    
+    private void playlistVoteAction(MessageParser parser){
+    	 // edit request
+        if (parser.getInstruction().equalsIgnoreCase("edit")){
+                String song = parser.getOldSong();
+                //vote yes
+                if(playList.containsKey(song)){
+                    parser.setMessageHeader(TransitionMsg.YES.toString());
+                    parser.setSource(Integer.toString(myID));
+                    sendMsg(coordinator,parser.composeMessage());
+                    dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
+                    myState = StateAC.UNCERTAIN;
+                }
+                //vote no
+                else{
+                    parser.setMessageHeader(TransitionMsg.NO.toString());
+                    parser.setSource(Integer.toString(myID));
+                    sendMsg(coordinator,parser.composeMessage());
+                    dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
+                    myState = StateAC.ABORT;
+
+                }
+        }
+        //request for add
+        else if (parser.getInstruction().equalsIgnoreCase("add")){
+               String song = parser.getSong();
+               //vote yes
+               if(!playList.containsKey(song)){
+                   parser.setMessageHeader(TransitionMsg.YES.toString());
+                   parser.setSource(Integer.toString(myID));
+                   sendMsg(coordinator,parser.composeMessage());
+                   dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
+                   myState = StateAC.UNCERTAIN;
+               }
+               //vote no
+               else{
+                   parser.setMessageHeader(TransitionMsg.NO.toString());
+                   parser.setSource(Integer.toString(myID));
+                   sendMsg(coordinator,parser.composeMessage());
+                   dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
+                   myState = StateAC.ABORT;
+
+               }
+        }
+        // request for delete
+        else if (parser.getInstruction().equalsIgnoreCase("del")){
+               //vote yes
+               String song = parser.getSong();
+               if(playList.containsKey(song)){
+                   parser.setMessageHeader(TransitionMsg.YES.toString());
+                   parser.setSource(Integer.toString(myID));
+                   sendMsg(coordinator,parser.composeMessage());
+                   dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
+                   myState =StateAC.UNCERTAIN;
+               }
+               //vote no
+               else{
+                   parser.setMessageHeader(TransitionMsg.NO.toString());
+                   parser.setSource(Integer.toString(myID));
+                   sendMsg(coordinator,parser.composeMessage());
+                   dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
+                   myState = StateAC.ABORT;
+               }
+        }
+        // wrong vote request
+        else {
+
+        }
+    }
+    
+    /*
+     * 
+     *  Playlist following action ,add ,edit or delete
+     * 
+     */
+    
+    private void playListFollowAction(MessageParser parser){
+    	 // edit commit
+        if (parser.getInstruction().equalsIgnoreCase("edit")){
+               String newsong = parser.getSong();
+               String oldsong = parser.getOldSong();
+               String url = parser.getUrl();
+               edit(oldsong,newsong,url);
+               dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
+               myState = StateAC.COMMIT;
+
+        }
+        //commit for add
+        else if (parser.getInstruction().equalsIgnoreCase("add")){
+                String song = parser.getSong();
+                String url = parser.getUrl();
+                add(song, url);
+                dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
+                myState = StateAC.COMMIT;
+        }
+        // commit for delete
+        else if (parser.getInstruction().equalsIgnoreCase("del")){
+                String song = parser.getSong();
+                remove(song);
+                dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
+                myState = StateAC.COMMIT;
+        }
+        // wrong vote request
+        else{
+
+        }
+    }
+    
+    /*
     * Process received message as participant
     */
     private void processReceivedMsgAsParticipant(String message){
@@ -218,73 +334,9 @@ public class Node {
         // Receive vote request message
 
         if(parser.getMessageHeader().toString().equals(TransitionMsg.VOTE_REQ.toString())){
-
-                // edit request
-                if (parser.getInstruction().equalsIgnoreCase("edit")){
-                        String song = parser.getOldSong();
-                        //vote yes
-                        if(playList.containsKey(song)){
-                            parser.setMessageHeader(TransitionMsg.YES.toString());
-                            parser.setSource(Integer.toString(myID));
-                            sendMsg(coordinator,parser.composeMessage());
-                            dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
-                            myState = StateAC.UNCERTAIN;
-                        }
-                        //vote no
-                        else{
-                            parser.setMessageHeader(TransitionMsg.NO.toString());
-                            parser.setSource(Integer.toString(myID));
-                            sendMsg(coordinator,parser.composeMessage());
-                            dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
-                            myState = StateAC.ABORT;
-
-                        }
-                }
-                //request for add
-                else if (parser.getInstruction().equalsIgnoreCase("add")){
-                       String song = parser.getSong();
-                       //vote yes
-                       if(!playList.containsKey(song)){
-                           parser.setMessageHeader(TransitionMsg.YES.toString());
-                           parser.setSource(Integer.toString(myID));
-                           sendMsg(coordinator,parser.composeMessage());
-                           dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
-                           myState = StateAC.UNCERTAIN;
-                       }
-                       //vote no
-                       else{
-                           parser.setMessageHeader(TransitionMsg.NO.toString());
-                           parser.setSource(Integer.toString(myID));
-                           sendMsg(coordinator,parser.composeMessage());
-                           dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
-                           myState = StateAC.ABORT;
-
-                       }
-                }
-                // request for delete
-                else if (parser.getInstruction().equalsIgnoreCase("del")){
-                       //vote yes
-                       String song = parser.getSong();
-                       if(playList.containsKey(song)){
-                           parser.setMessageHeader(TransitionMsg.YES.toString());
-                           parser.setSource(Integer.toString(myID));
-                           sendMsg(coordinator,parser.composeMessage());
-                           dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
-                           myState =StateAC.UNCERTAIN;
-                       }
-                       //vote no
-                       else{
-                           parser.setMessageHeader(TransitionMsg.NO.toString());
-                           parser.setSource(Integer.toString(myID));
-                           sendMsg(coordinator,parser.composeMessage());
-                           dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
-                           myState = StateAC.ABORT;
-                       }
-                }
-                // wrong vote request
-                else{
-
-                }
+               
+              	playlistVoteAction(parser);
+     
         }
 
         //  Receive pre-commit message
@@ -303,35 +355,7 @@ public class Node {
         //Receive commit message
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.COMMIT.toString())){
-            // edit commit
-            if (parser.getInstruction().equalsIgnoreCase("edit")){
-                   String newsong = parser.getSong();
-                   String oldsong = parser.getOldSong();
-                   String url = parser.getUrl();
-                   edit(oldsong,newsong,url);
-                   dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
-                   myState = StateAC.COMMIT;
-
-            }
-            //commit for add
-            else if (parser.getInstruction().equalsIgnoreCase("add")){
-                    String song = parser.getSong();
-                    String url = parser.getUrl();
-                    add(song, url);
-                    dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
-                    myState = StateAC.COMMIT;
-            }
-            // commit for delete
-            else if (parser.getInstruction().equalsIgnoreCase("del")){
-                    String song = parser.getSong();
-                    remove(song);
-                    dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
-                    myState = StateAC.COMMIT;
-            }
-            // wrong vote request
-            else{
-
-            }
+             	playListFollowAction(parser);
         }
 
         //  Receive Abort message
@@ -342,6 +366,19 @@ public class Node {
         		myState = StateAC.ABORT;
         }
 
+        //Receive state request
+
+        else if (parser.getMessageHeader().toString().equals(TransitionMsg.STATE_REQ.toString())){
+        	sendParticipantState(myState, parser);
+        }
+        
+        //Receive recover request
+
+        else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REQ.toString())){
+        	
+        }
+        
+        
         // Receive Wrong Message
         else{
 
@@ -350,12 +387,9 @@ public class Node {
 
 
     /*
-    *
     * Sending messsage
-    *
     */
 
-	//accessors & mutators
 	public void sendMsg(int procID, String msg) {
 		this.nc.sendMsg(procID, msg);
 	}
@@ -374,6 +408,200 @@ public class Node {
 		return this.nc.getConfig().procNum;
 	}
 	
+	private StateAC getParticiapntState(){
+		if(myID != coordinator) 
+			return myState;
+		else 
+			return null;
+
+	}
+	
+	
+	/*
+	 * Get message using polling when there is no failure
+	 */
+	
+	private void getMessagePolling() throws InterruptedException{
+		 while(true){
+             List<String> messages = null;
+             long startTime = (System.currentTimeMillis()+timeout);
+             long smallTimeout = timeout/10;
+
+             // receive message until timeout
+             while(System.currentTimeMillis() < startTime) {
+                 Thread.sleep(smallTimeout);
+                 messages = (nc.getReceivedMsgs());
+                
+                 for(String m:messages) {
+                    
+               	   
+                    
+                 }
+             }
+             
+             
+             // There is no comming message
+             if(messages.isEmpty()){
+            	 
+             }
+		 }
+	}
+	
+	/*
+	 * 
+	 * Time out action when there is a failure
+	 * 
+	 */
+	 private Queue<MessageParser> getMessagesUntilTimeOut() throws InterruptedException {
+
+          
+
+          while(true){
+              List<String> messages;
+              Queue<MessageParser> parsers = null;
+              long startTime = (System.currentTimeMillis()+timeout);
+              long smallTimeout = timeout/10;
+
+              while(System.currentTimeMillis() < startTime) {
+                  Thread.sleep(smallTimeout);
+                  messages = (nc.getReceivedMsgs());
+                 
+                  for(String m :messages) {
+                     
+                	 
+                     
+                  }
+              }
+              
+              
+             
+           }
+      }
+	
+	
+	/*
+	 * 
+	 *Termination Protocal 
+	 *Depends on my state and received message
+	 * 
+	 */
+	
+	private TransitionMsg terminationProtocol(StateAC myState, List<MessageParser> list ) {
+        
+        TransitionMsg termination_decision = null;
+        if(list.isEmpty()) {
+           
+        } else {
+            int count_commitable = 0;
+            int count_uncertain = 0;
+            boolean commit_flag = false;
+            boolean abort_flag = false;
+
+            for(MessageParser item:list) {
+            	
+            	// if some decide to abort
+                if(item.getMessageHeader().equalsIgnoreCase(StateAC.ABORT.toString())) {
+                    abort_flag = true;
+                    break;
+                } 
+                // if some decide to commit
+                else if(item.getMessageHeader().equalsIgnoreCase(StateAC.COMMIT.toString())) {
+                    commit_flag = true;
+                    break;
+                } 
+                // record the number of uncertain
+                else if(item.getMessageHeader().equalsIgnoreCase(StateAC.UNCERTAIN.toString())) {
+                    count_uncertain ++;
+                    continue;
+                } 
+                // record the number of commitable
+                else if(item.getMessageHeader().equalsIgnoreCase(StateAC.COMMITABLE.toString())) {
+                    count_commitable ++;
+                    continue;
+                }
+            }
+            
+            switch(myState) {
+                case ABORT: abort_flag = true; break;
+                case COMMIT: commit_flag = true; break;
+                case UNCERTAIN: count_uncertain ++; break;
+                case COMMITABLE: count_commitable++; break;
+            }
+
+            if(abort_flag) {
+                termination_decision = TransitionMsg.ABORT;
+            } else if(commit_flag) {
+                termination_decision = TransitionMsg.COMMIT;
+            } else if(count_uncertain == list.size() + 1) {
+                termination_decision = TransitionMsg.ABORT;
+            } else if(count_commitable > 0) {
+                termination_decision = TransitionMsg.PRECOMMIT;
+            }
+           
+        }
+
+
+        return termination_decision;
+    }
+	
+	/*
+	 * 
+	 * Election Protocal
+	 * 
+	 */
+	private int electionProtocol(){
+		
+		coordinator =  (coordinator+1) % viewNumber;
+		return coordinator;
+	}
+	
+	
+	/*
+	 * 
+	 *  As participant, sent out the state
+	 * 
+	 */
+	private void sendParticipantState(StateAC state, MessageParser stResponse){
+
+        String senderProcNum = stResponse.getSource();
+        stResponse.setSource(String.valueOf(config.procNum));
+        stResponse.setMessageHeader(TransitionMsg.STATE_RES.toString());
+        String stateResponse = stResponse.composeMessage();
+
+        nc.sendMsg(Integer.valueOf(senderProcNum), stateResponse);
+        
+        return;
+    }
+	
+	
+	/*
+	 * 
+	 * Sent out the state request as a new coordinate
+	 * 
+	 */
+	
+	 private void sendStateReq(MessageParser pmrequest) {
+	        pmrequest.setMessageHeader(TransitionMsg.STATE_REQ.toString());
+	        pmrequest.setSource(String.valueOf(config.procNum));
+	        String request = pmrequest.composeMessage();
+
+	        //TODO Change if liveSet of processes in implemented
+	        for(Integer i: upSet) {
+	            if(config.procNum == i.intValue())
+	                continue;
+
+	            nc.sendMsg(i.intValue(), request);
+	        }
+	 }
+	 
+	 
+	 /*
+	  * 
+	  * 
+	  *  Main Function
+	  * 
+	  * 
+	  */
 	public static void main(String[] args) {
 		
 		Node n = new Node(args[0],args[1]);

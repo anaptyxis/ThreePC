@@ -6,7 +6,8 @@ package ut.distcomp.framework;
 public enum StateAC {
     IDLE,
     START_3PC,
-    WAIT_FOR_VOTE,
+    WAIT_FOR_VOTE_REQ,
+    WAIT_FOR_VOTE_DEC,
     WAIT_FOR_ACKS,
     UNCERTAIN,
     COMMITABLE,
@@ -19,7 +20,8 @@ public enum StateAC {
     static {
         IDLE.string = "idle";
         START_3PC.string="start";
-        WAIT_FOR_VOTE.string="wait_for_vote";
+        WAIT_FOR_VOTE_REQ.string="wait_for_vote_req";
+        WAIT_FOR_VOTE_DEC.string="wait_for_vote_dec";
         WAIT_FOR_ACKS.string ="wait_for_acks";
         UNCERTAIN.string = "uncertain";
         COMMITABLE.string = "commitable";
