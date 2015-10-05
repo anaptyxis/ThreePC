@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 
+import android.R.bool;
+import android.R.integer;
 import android.net.NetworkInfo.State;
 
 /**
@@ -23,7 +25,7 @@ public class Node {
 	private HashSet<Integer> up;
 	private DTLog dtLog;
 	private boolean running;   //only altered if process shuts down gracefully
-	private int myID;
+	private static int myID;
     private StateAC myState = StateAC.IDLE;
     private ArrayList<Integer> DecisionList=new ArrayList<Integer>(viewNumber);
     private ArrayList<Integer> ACKList=new ArrayList<Integer>(viewNumber);
@@ -39,6 +41,18 @@ public class Node {
 		up = new HashSet<Integer>();
 		dtLog = new DTLog(dtL);
 		running = true;
+		
+		
+		myID = getID();
+		for(int i = 0 ; i < viewNumber; i++){
+			if(i!=myID){
+				DecisionList.set(i, 0);
+				ACKList.set(i, 0);
+			}else{
+				DecisionList.set(i, 1);
+				ACKList.set(i, 1);
+			}
+		}
 	}
 	
 	/*
@@ -107,23 +121,89 @@ public class Node {
         MessageParser parser = new MessageParser(message);
         // start 3 PC
         if (parser.getMessageHeader().toString().equals(TransitionMsg.CHANGE_REQ.toString())){
-
+        	parser.setMessageHeader(TransitionMsg.VOTE_REQ.toString());
+        		for(int i = 0 ; i < viewNumber ; i++){
+        			if(i!=coordinator){
+        				sendMsg(i, parser.composeMessage() );
+        			}
+        		}
+        		myState = StateAC.START_3PC;
         }
         // receive VOTE_DEC YES
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.YES.toString()) ){
-
+        	  int source = Integer.parseInt(parser.getSource());
+        	  DecisionList.set(source, 1);
         }
 
         else if( parser.getMessageHeader().toString().equals(TransitionMsg.NO.toString())){
-
+        	  int source = Integer.parseInt(parser.getSource());
+        	  DecisionList.set(source, -1);
         }
         // receive ACK
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.ACK.toString())){
-
+        	 int source = Integer.parseInt(parser.getSource());
+        	 ACKList.set(source, 1);
         }
 
         else{
 
+        }
+        
+        // Decide whether to precommit or abort;
+        Boolean ready = false;
+        if(!DecisionList.contains(0)) ready  = true;
+        
+        if(ready){
+        	//abort
+        	if(DecisionList.contains(-1)){
+        		parser.setMessageHeader(TransitionMsg.ABORT.toString());
+        		for(int j = 0 ; j < viewNumber ; j++){
+        			if(j != coordinator && DecisionList.get(j)==1){
+        				sendMsg(j, parser.composeMessage());
+        			}
+        		}
+        		//log
+        		 dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
+                 myState = StateAC.ABORT;
+        	}
+        	//commit
+        	else{
+        		parser.setMessageHeader(TransitionMsg.PRECOMMIT.toString());
+        		for(int j = 0 ; j < viewNumber ; j++){
+        			if(j != coordinator ){
+        				sendMsg(j, parser.composeMessage());
+        			}
+        		}
+        		//log
+        		 dtLog.writeEntry(TransitionMsg.PRECOMMIT, parser.getTransaction(), null, myID, coordinator);
+                 myState = StateAC.WAIT_FOR_ACKS;
+        	}
+        	
+        	//clear the history
+        	for(int j = 0 ; j < viewNumber ; j++){
+        		if(j!=myID)
+    			DecisionList.set(j, 0);
+    		}
+        }
+        
+        
+        // Decide whether to send final commit message
+        Boolean readyCommit = false;
+        if(!ACKList.contains(0)) readyCommit  = true;
+        if(readyCommit){
+        	parser.setMessageHeader(TransitionMsg.COMMIT.toString());
+    		for(int j = 0 ; j < viewNumber ; j++){
+    			if(j != coordinator ){
+    				sendMsg(j, parser.composeMessage());
+    			}
+    		}
+    		//log
+    		dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
+            myState = StateAC.COMMIT;
+            for(int j = 0 ; j < viewNumber ; j++){
+        		if(j!=myID)
+    			ACKList.set(j, 0);
+    		}
         }
     }
 
@@ -295,7 +375,11 @@ public class Node {
 	public static void main(String[] args) {
 		
 		Node n = new Node(args[0],args[1]);
-		while (n.running); //until graceful shutdown
+		MessageParser parser= new MessageParser( Integer.toString(myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
+		
+		if(myID==1)
+			n.sendMsg(0,parser.composeMessage());
+		
 	}
 	
 }

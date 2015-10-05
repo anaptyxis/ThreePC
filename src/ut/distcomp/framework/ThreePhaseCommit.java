@@ -120,6 +120,14 @@ public class ThreePhaseCommit {
 				int arg = Integer.parseInt(strArr[1]);
 				rejectNextChange(arg);												
 			}
+			if (strArr[0].equals("change")) {
+				int arg = Integer.parseInt(strArr[1]);
+																
+			}
+			if (strArr[0].equals("add")) {
+				int arg = Integer.parseInt(strArr[1]);
+																
+			}
 		}
 		System.out.println("======");
 	}
@@ -165,7 +173,7 @@ public class ThreePhaseCommit {
 
 	public void killLeader() {
 		
-		System.out.print("3PC Controller: Killing LEADER process——>");
+		System.out.print("3PC Controller: Killing LEADER process������>");
 		this.kill(coordinatorID);
 		
 	}
@@ -179,7 +187,7 @@ public class ThreePhaseCommit {
 
 	public void reviveLast() {
 
-		System.out.print("3PC Controller: Reviving LAST killed process p——>");
+		System.out.print("3PC Controller: Reviving LAST killed process p������>");
 		this.revive(lastKilledID); 
 		
 	}
