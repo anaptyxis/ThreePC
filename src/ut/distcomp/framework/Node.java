@@ -385,7 +385,7 @@ public class Node {
 		return nc.getConfig().timeOut;
 	}
 	  
-	private StateAC getParticiapntState(){
+	private StateAC getParticipantState(){
 		if(myID != coordinator) 
 			return myState;
 		else 
