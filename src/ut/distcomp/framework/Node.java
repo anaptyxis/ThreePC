@@ -445,7 +445,7 @@ public class Node {
                   messages = (nc.getReceivedMsgs());
                  
                   for(String m :messages) {
-                     
+                       processReceivedMsgAsParticipant(m);
                 	 
                      
                   }
