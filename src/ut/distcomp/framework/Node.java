@@ -108,6 +108,7 @@ public class Node {
         	parser.setMessageHeader(TransitionMsg.VOTE_REQ.toString());
         		for(int i = 0 ; i < viewNumber ; i++){
         			if(i!=coordinator){
+                       // System.out.println("send message to " + Integer.toString(i));
         				sendMsg(i, parser.composeMessage() );
         			}
         		}
@@ -410,7 +411,7 @@ public class Node {
                 
                  for(String m:messages) {
                     processReceivedMsgAscoordinator(m);
-               	    //System.out.println("I am Here");
+               	    System.out.println("I am Here");
                     
                  }
              }
