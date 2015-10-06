@@ -113,6 +113,7 @@ public class Node {
         			}
         		}
         		myState = StateAC.START_3PC;
+        		dtLog.writeEntry(myState, parser.getTransaction());
         }
         // receive VOTE_DEC YES
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.YES.toString()) ){
@@ -153,8 +154,9 @@ public class Node {
         			}
         		}
         		//log
-        		 dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
+        		 
                  myState = StateAC.ABORT;
+                 dtLog.writeEntry(myState, parser.getTransaction());
         	}
         	//commit
         	else{
@@ -165,8 +167,9 @@ public class Node {
         			}
         		}
         		//log
-        		 dtLog.writeEntry(TransitionMsg.PRECOMMIT, parser.getTransaction(), null, myID, coordinator);
+        
                  myState = StateAC.WAIT_FOR_ACKS;
+                 dtLog.writeEntry(myState, parser.getTransaction());
         	}
         	
         	//clear the history
@@ -188,8 +191,9 @@ public class Node {
     			}
     		}
     		//log
-    		dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
+    		
             myState = StateAC.COMMIT;
+            dtLog.writeEntry(myState, parser.getTransaction());
             for(int j = 0 ; j < viewNumber ; j++){
         		if(j!=myID)
     			ACKList.set(j, 0);
@@ -212,16 +216,16 @@ public class Node {
                     parser.setMessageHeader(TransitionMsg.YES.toString());
                     parser.setSource(Integer.toString(myID));
                     sendMsg(coordinator,parser.composeMessage());
-                    dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
                     myState = StateAC.UNCERTAIN;
+                    dtLog.writeEntry(myState, parser.getTransaction());
                 }
                 //vote no
                 else{
                     parser.setMessageHeader(TransitionMsg.NO.toString());
                     parser.setSource(Integer.toString(myID));
                     sendMsg(coordinator,parser.composeMessage());
-                    dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
                     myState = StateAC.ABORT;
+                    dtLog.writeEntry(myState, parser.getTransaction());
 
                 }
         }
@@ -233,16 +237,16 @@ public class Node {
                    parser.setMessageHeader(TransitionMsg.YES.toString());
                    parser.setSource(Integer.toString(myID));
                    sendMsg(coordinator,parser.composeMessage());
-                   dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
                    myState = StateAC.UNCERTAIN;
+                   dtLog.writeEntry(myState, parser.getTransaction());
                }
                //vote no
                else{
                    parser.setMessageHeader(TransitionMsg.NO.toString());
                    parser.setSource(Integer.toString(myID));
                    sendMsg(coordinator,parser.composeMessage());
-                   dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
                    myState = StateAC.ABORT;
+                   dtLog.writeEntry(myState, parser.getTransaction());
 
                }
         }
@@ -254,16 +258,16 @@ public class Node {
                    parser.setMessageHeader(TransitionMsg.YES.toString());
                    parser.setSource(Integer.toString(myID));
                    sendMsg(coordinator,parser.composeMessage());
-                   dtLog.writeEntry(TransitionMsg.YES, parser.getTransaction(), null, myID, coordinator);
                    myState =StateAC.UNCERTAIN;
+                   dtLog.writeEntry(myState, parser.getTransaction());
                }
                //vote no
                else{
                    parser.setMessageHeader(TransitionMsg.NO.toString());
                    parser.setSource(Integer.toString(myID));
                    sendMsg(coordinator,parser.composeMessage());
-                   dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
                    myState = StateAC.ABORT;
+                   dtLog.writeEntry(myState, parser.getTransaction());
                }
         }
         // wrong vote request
@@ -285,8 +289,8 @@ public class Node {
                String oldsong = parser.getOldSong();
                String url = parser.getUrl();
                edit(oldsong,newsong,url);
-               dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
                myState = StateAC.COMMIT;
+               dtLog.writeEntry(myState, parser.getTransaction());
 
         }
         //commit for add
@@ -294,15 +298,15 @@ public class Node {
                 String song = parser.getSong();
                 String url = parser.getUrl();
                 add(song, url);
-                dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
                 myState = StateAC.COMMIT;
+                dtLog.writeEntry(myState, parser.getTransaction());
         }
         // commit for delete
         else if (parser.getInstruction().equalsIgnoreCase("del")){
                 String song = parser.getSong();
                 remove(song);
-                dtLog.writeEntry(TransitionMsg.COMMIT, parser.getTransaction(), null, myID, coordinator);
                 myState = StateAC.COMMIT;
+                dtLog.writeEntry(myState, parser.getTransaction());
         }
         // wrong vote request
         else{
@@ -333,8 +337,8 @@ public class Node {
                 parser.setMessageHeader(TransitionMsg.ACK.toString());
                 parser.setSource(Integer.toString(myID));
                 sendMsg(coordinator,parser.composeMessage());
-                dtLog.writeEntry(TransitionMsg.ACK, parser.getTransaction(), null, myID, coordinator);
                 myState = StateAC.COMMITABLE;
+                dtLog.writeEntry(myState, parser.getTransaction());
         }
 
         //Receive commit message
@@ -347,8 +351,8 @@ public class Node {
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.ABORT.toString())){
                 // log the message
-        		dtLog.writeEntry(TransitionMsg.ABORT, parser.getTransaction(), null, myID, coordinator);
         		myState = StateAC.ABORT;
+        		dtLog.writeEntry(myState, parser.getTransaction());
         }
 
         //Receive state request
@@ -411,7 +415,7 @@ public class Node {
                 
                  for(String m:messages) {
                     processReceivedMsgAscoordinator(m);
-               	    System.out.println("I am Here");
+               	    //System.out.println("I am Here");
                     
                  }
              }
