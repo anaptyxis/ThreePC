@@ -18,7 +18,7 @@ public class Node {
 	private NetController nc;
 	private Hashtable<String,String> playList;
 	private int viewNumber = 5;
-	private static int coordinator = 0;
+	private int coordinator = 0;
 	private DTLog dtLog;
 	private boolean running;   //only altered if process shuts down gracefully
 	private int myID;
@@ -27,14 +27,7 @@ public class Node {
     private ArrayList<Integer> ACKList = new ArrayList<Integer>();
     private HashSet<Integer> upSet = new HashSet<Integer>();
 	private MessageParser currentAction = null;
-	
 	public Node(String configName, String dtL) {
-		//if dtLog is not empty, then failure has occurred and this is 
-		//a revival. We need to put a handler in to bring the process 
-		//back up. Otherwise, the process/Node is constructed from scratch.
-		// TODO: validate that DTLog is not destructively opened on
-		//		 revivial.
-		
 		try {
 			config = new Config(configName);
 		} catch (IOException e) {
@@ -45,6 +38,7 @@ public class Node {
 		dtLog = new DTLog(dtL);
 		running = true;
         viewNumber = config.numProcesses;
+        currentAction = new MessageParser();
 		myID = getID();
 		for(int i = 0 ; i < viewNumber; i++){
 			if(i!=myID){
@@ -146,10 +140,6 @@ public class Node {
         	 ACKList.set(source, 1);
         }
         
-        // receive STATE response
-        else if (parser.getMessageHeader().toString().equals(TransitionMsg.STATE_RES.toString())){
-        	 
-        }
         //wrong message
         else{
 
@@ -334,7 +324,7 @@ public class Node {
     /*
     * Process received message as participant
     */
-    private void processReceivedMsgAsParticipant(String message){
+    private void processReceivedMsgAsParticipant(String message) throws InterruptedException{
         MessageParser parser = new MessageParser(message);
 
         // Receive vote request message
@@ -375,13 +365,38 @@ public class Node {
         //Receive state request
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.STATE_REQ.toString())){
-        	sendParticipantState(myState, parser);
+        	   System.out.println("Receive State Request"); 
+        	   //set the new UP set
+        	   upSet = parser.getUpSet();
+        	   // send participant state
+        	   sendParticipantState(myState, parser);
         }
         
         //Receive recover request
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REQ.toString())){
         	
+        }
+        
+        //Receive UR_ELECTED message, I am new coordinator now
+
+        else if (parser.getMessageHeader().toString().equals(TransitionMsg.UR_ELECTED.toString())){
+        	    System.out.println("Hahaha I am "+ Integer.toString(myID) + "new leader");
+        	    //I am new Coordinator
+        	    if(myID != coordinator) 
+        	    	System.out.println("Seems something wrong happens, sinces I am not the coordinator");
+        	    // update the UP set
+        	    upSet = parser.getUpSet();
+        	    System.out.println("my new UP set is " + upSet);
+        	    //Send out the State_REQ
+        	    sendStateReq(parser);
+        	    
+        	    // change my state and DT log that
+        	    
+        	    myState = StateAC.WAIT_FOR_STATE_RES;
+        	    dtLog.writeEntry(myState, parser.getTransaction());
+        	    //And now I am new Coordinator
+        	    getMessageAsCoordinator();
         }
         
         
@@ -405,13 +420,27 @@ public class Node {
 	public int getTimeOut() {
 		return nc.getConfig().timeOut;
 	}
-	  
+	
+	/*
+	 *   Get the state of Participant
+	 */
 	private StateAC getParticipantState(){
 		if(myID != coordinator) 
 			return myState;
 		else 
 			return null;
 
+	}
+	
+	/*
+	 *   Get the state of Coordinator
+	 */
+	private StateAC getCoordinatorState(){
+		if(myID == coordinator)
+			return myState;
+		else {
+			return null;
+		}
 	}
 	
 	
@@ -422,6 +451,7 @@ public class Node {
 	private void getMessageAsCoordinator() throws InterruptedException{
 		 while(true){
              List<String> messages = null;
+             ArrayList<MessageParser> stateReqList = new ArrayList<MessageParser>();
              long startTime = (System.currentTimeMillis()+getTimeOut());
              long smallTimeout = getTimeOut()/10;
              Boolean atLeastOneBoolean= false;
@@ -431,11 +461,27 @@ public class Node {
                  messages = (nc.getReceivedMsgs());
                 
                  for(String m:messages) {
-                    processReceivedMsgAscoordinator(m);
+                	currentAction = new MessageParser(m);
+                	if(currentAction.getMessageHeader().equals(TransitionMsg.STATE_RES.toString()))
+                		stateReqList.add(currentAction);
+                	else {
+                		processReceivedMsgAscoordinator(m);
+					}
+                    
                	    //System.out.println("I am Here");
-                    currentAction = new MessageParser(m);
+                    
                     atLeastOneBoolean = true;
                  }
+             }
+             // if there is message comming, and the message is about the state response
+             if(atLeastOneBoolean && myState==StateAC.WAIT_FOR_STATE_RES){
+            	  TransitionMsg header = terminationRule(myState, stateReqList);
+            	  currentAction.setMessageHeader(header.toString());
+            	  for(int j : upSet){
+            		  if(j!=coordinator)
+            			  sendMsg(j, currentAction.composeMessage());
+            	  }
+            	  stateReqList.clear();
              }
              
              if(!atLeastOneBoolean)
@@ -467,6 +513,8 @@ public class Node {
                 myState = StateAC.COMMIT;
                 dtLog.writeEntry(myState, currentAction.getTransaction());
              }
+            
+             
 		 }
 	}
 	
@@ -475,28 +523,41 @@ public class Node {
 	 * Time out action when there is a failure
 	 * 
 	 */
-	 private List<MessageParser> getMessagesAsParticipant() throws InterruptedException {
-
-          
-
+	 private void getMessagesAsParticipant() throws InterruptedException {
+		 
           while(true){
-              List<String> messages;
-              List<MessageParser> parsers = null;
-              MessageParser current = new MessageParser();
+              List<String> messages ;
               long startTime = (System.currentTimeMillis()+getTimeOut());
               long smallTimeout = getTimeOut()/10;
               boolean atleastone = false;
+              int num_of_election_message = 0;
               while(System.currentTimeMillis() < startTime) {
                   Thread.sleep(smallTimeout);
                   messages = (nc.getReceivedMsgs());
-                 
+                  //System.out.println("Receive message :  "+ messages);
                   for(String m :messages) {
                 	   
-                       processReceivedMsgAsParticipant(m);
+                	   currentAction = new MessageParser(m);
+                	   
+                	   if(!currentAction.getMessageHeader().equals( TransitionMsg.UR_ELECTED.toString())){
+                		   processReceivedMsgAsParticipant(m);
+                	   }
+                	   else{
+                		   System.out.println("I am "+ myID+ " and I receive election message");
+                		   // What you receive is UR_ELECTED message
+                		   // You should not process more than once
+                		   if(num_of_election_message==0){
+                			   num_of_election_message++;
+                			   processReceivedMsgAsParticipant(m);
+                		   }
+                	   }
                 	   atleastone = true;
                      
                   }
               }
+              num_of_election_message = 0;
+              if(!atleastone)
+            	      System.out.println("Participant time out");
               
               // wait for VOTE request from coordinator
               if(!atleastone && myState == StateAC.IDLE){
@@ -505,7 +566,24 @@ public class Node {
             	      dtLog.writeEntry(myState, "wait for vote request");
               }
               
+              // wait for Precommit message from coordinator
+              if(!atleastone && myState==StateAC.UNCERTAIN){
+            	      System.out.println("Participant wait for Coordinator's Precommit");
+            	      //remove coordinator in UP set
+            	      upSet.remove(coordinator);
+            	      //run election protocol  and send state request
+            	      int newCoor = electionProtocol(currentAction);
+            	      
+            	      //System.out.println("I am " + myID + " new coordinator is " + Integer.toString(newCoor));
+            	      if(newCoor == myID)
+            	    	  break;
+            	      
+              }
               
+              // wait for commit message from coordinator
+              if(!atleastone && myState==StateAC.COMMITABLE){
+            	  	  System.out.println("Participant wait for Coordinator's Commit");
+              }
              
            }
       }
@@ -519,10 +597,10 @@ public class Node {
 	 */
 	
 	private TransitionMsg terminationRule(StateAC myState, List<MessageParser> list ) {
-        
+		System.out.println("start termination rule");
         TransitionMsg termination_decision = null;
         if(list.isEmpty()) {
-           
+           System.out.println("there is a empty set for termination rule");
         } else {
             int count_commitable = 0;
             int count_uncertain = 0;
@@ -583,15 +661,15 @@ public class Node {
 	 */
 	private int electionProtocol(MessageParser parser){
 		parser.setSource(Integer.toString(myID));
+		parser.initHashSet(upSet.toString());
 		int newC = Integer.MAX_VALUE;
 		for(int m : upSet){
 			newC = Math.min(newC, m);
 		}
 		// if I am the new coordinator
-		if(newC == myID) coordinator=myID;
-		else {
+		coordinator=newC;
+		if(myID != newC)
 		     sendURElectedMsg(myState, parser, newC);
-		}
 		return coordinator;
 	}
 	
@@ -602,10 +680,10 @@ public class Node {
 	 */
 	
 	 private void sendURElectedMsg(StateAC participantState, MessageParser pmRequest, int destProcNum ){
-         
+         System.out.println("I am "+ myID+ " send message to new leader " + Integer.toString(destProcNum));
 		 pmRequest.setMessageHeader(TransitionMsg.UR_ELECTED.toString());
-         String stRequest = pmRequest.composeMessage();
-         nc.sendMsg(destProcNum, stRequest);
+         String stRequest = pmRequest.composeWithUpset();
+         sendMsg(destProcNum, stRequest);
      }
 	
 	/*
@@ -620,7 +698,7 @@ public class Node {
         stResponse.setMessageHeader(TransitionMsg.STATE_RES.toString());
         String stateResponse = stResponse.composeMessage();
 
-        nc.sendMsg(Integer.valueOf(senderProcNum), stateResponse);
+        sendMsg(Integer.valueOf(senderProcNum), stateResponse);
         
         return;
     }
@@ -635,13 +713,13 @@ public class Node {
 	 private void sendStateReq(MessageParser pmrequest) {
 	        pmrequest.setMessageHeader(TransitionMsg.STATE_REQ.toString());
 	        pmrequest.setSource(String.valueOf(config.procNum));
-	        String request = pmrequest.composeMessage();
-
+	        String request = pmrequest.composeWithUpset();
+	        
 	        //TODO Change if liveSet of processes in implemented
 	        for(Integer i: upSet) {
 	            if(config.procNum == i.intValue())
 	                continue;
-
+	            System.out.println("I am send state request " + Integer.toString(i) );
 	            nc.sendMsg(i.intValue(), request);
 	        }
 	 }
@@ -683,7 +761,7 @@ public class Node {
 			n.sendMsg(0,parser.composeMessage());
 			System.out.println("I want to start 3PC");
 		}
-        if(n.myID == coordinator)
+        if(n.myID == n.coordinator)
            n.getMessageAsCoordinator();
         else
            n.getMessagesAsParticipant();
