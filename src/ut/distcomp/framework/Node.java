@@ -159,6 +159,8 @@ public class Node {
         Boolean ready = false;
         if(!DecisionList.contains(0)) ready  = true;
         
+        //System.out.println(DecisionList);
+        
         if(ready){
         	//abort
         	if(DecisionList.contains(-1)){
@@ -436,7 +438,10 @@ public class Node {
                  }
              }
              
-             // There is no vote decision comming
+             if(!atLeastOneBoolean)
+            	 System.out.println("Time out action for coordinator");
+             
+             // There is no vote decision coming
              if(!atLeastOneBoolean && myState==StateAC.WAIT_FOR_VOTE_DEC){
             	  System.out.println("Time out action for coordinator wait for vote Decision");
             	  currentAction.setMessageHeader(TransitionMsg.ABORT.toString());
@@ -445,9 +450,10 @@ public class Node {
           				sendMsg(j, currentAction.composeMessage());
           			}
           		  }
-            	  break;
+            	  myState = StateAC.ABORT;
+            	  dtLog.writeEntry(myState, currentAction.getTransaction());
              }
-             // if there is no ack come back
+             // if there is no ACK come back
              else if (!atLeastOneBoolean && myState == StateAC.WAIT_FOR_ACKS){
             	 System.out.println("Time out action for coordinator ACK");
             	 currentAction.setMessageHeader(TransitionMsg.COMMIT.toString());
