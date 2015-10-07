@@ -21,6 +21,7 @@ public class Node {
 	private int coordinator = 0;
 	private DTLog dtLog;
 	private boolean running;   //only altered if process shuts down gracefully
+	private boolean revival;
 	private int myID;
     private StateAC myState = StateAC.IDLE;
     private ArrayList<Integer> DecisionList = new ArrayList<Integer>(); //-1 NO, 0 NO DECISION, 1 YES
@@ -48,6 +49,7 @@ public class Node {
 			logEntry = dtLog.readEntry();	
 		}
 */		running = true;
+		this.revival = revival;
         viewNumber = config.numProcesses;
         currentAction = new MessageParser();
 		myID = getID();
