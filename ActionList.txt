@@ -1,0 +1,16 @@
+add SongA http://SongA.mysongs.com/
+add SongA http://SongA.mysongs.com/
+add SongB http://SongB.mysongs.com/
+add SongB SongA http://SongA.mysongs.com/
+add SongC http://SongC.mysongs.com/
+add SongD http://SongD.mysongs.com/
+add SongE http://SongE.mysongs.com/
+edit SongB SongBeta
+add SongF http://SongF.mysongs.com/
+remove SongC 
+remove SongF 
+edit SongA SongAlpha
+edit SongE SongEpsilon
+edit SongD SongDelta
+add SongGamma http://SongGamma.mysongs.com/
+remove SongOmega
