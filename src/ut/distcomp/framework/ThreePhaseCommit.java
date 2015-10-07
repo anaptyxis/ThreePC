@@ -71,7 +71,7 @@ public class ThreePhaseCommit {
 
 		System.out.println("SCRIPT\n======");
 		for (String s: script) {
-			System.out.println(">> "+s); //TODO: for now just print
+			System.out.println(">> "+s); 
 			String[] strArr = (s.trim()).split(" ");
 			if (strArr[0].equals("createProcesses")) {
 				int arg = Integer.parseInt(strArr[1]);
