@@ -3,6 +3,9 @@ wait 10
 kill 4
 wait 1
 kill 1
+wait 1
+revive 4
+wait 3
 killLeader
 wait 1
 killAll

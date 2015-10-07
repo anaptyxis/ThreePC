@@ -188,7 +188,7 @@ public class ThreePhaseCommit {
 		ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+procID+".txt","DTLog"+procID+".txt", "revive");
 		pb.inheritIO();
 		try {
-			procList.add(pb.start());
+			procList.set(procID,pb.start());
 		} catch (IOException e) {
 			System.err.println("Trouble reviving process p"+procID);
 			e.printStackTrace();
