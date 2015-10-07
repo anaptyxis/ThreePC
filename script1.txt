@@ -9,3 +9,7 @@ wait 3
 killLeader
 wait 1
 killAll
+wait 1
+reviveAll
+wait 1
+killAll

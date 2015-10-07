@@ -204,10 +204,9 @@ public class ThreePhaseCommit {
 
 	public void reviveAll() {
 
-		System.out.print("3PC Controller: Reviving ALL dead processes: ");
+		System.out.println("3PC Controller: Reviving ALL dead processes: ");
 		for (int i = 0; i < procList.size(); i++) {
 		  if (procList.get(i) == null) {
-			  System.out.print("p"+i+"\t");
 			  this.revive(i);
 		  }
 		}
