@@ -1,5 +1,9 @@
 package ut.distcomp.framework;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -27,6 +31,7 @@ public class Node {
     private ArrayList<Integer> DecisionList = new ArrayList<Integer>(); //-1 NO, 0 NO DECISION, 1 YES
     private ArrayList<Integer> ACKList = new ArrayList<Integer>();
     private HashSet<Integer> upSet = new HashSet<Integer>();
+    private ArrayList<MessageParser> ActionList = new ArrayList<MessageParser>();
 	private MessageParser currentAction = null;
 	
 	public Node(String configName, String dtL, boolean revival) {
@@ -114,6 +119,35 @@ public class Node {
 				playList.put(newSongName, (playList.remove(songName)));
 			return true;
 		}
+	}
+	
+	public void readActions(String actionsFName) {
+		try {
+			BufferedReader actionListReader = new BufferedReader(new FileReader(new File(actionsFName)));
+			String line = null;
+			do {
+				line = actionListReader.readLine();  
+				if (line != null) {
+					String[] strArr = line.split(" ");
+					System.out.println(strArr.length);
+					if (strArr[0].equals("add"))
+						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + strArr[2] + ";"+ TransitionMsg.CHANGE_REQ.toString()));
+					if (strArr[0].equals("edit"))
+						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + "," + strArr[2] + ";" + strArr[3] + ";" + TransitionMsg.CHANGE_REQ.toString()));
+					if (strArr[0].equals("remove"))
+						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + TransitionMsg.CHANGE_REQ.toString()));
+					System.out.println(line);
+				}
+			} while (line != null); 						
+			actionListReader.close();
+		} catch (FileNotFoundException e) {
+			System.err.println("Error reading script file "+actionsFName+".");
+			System.exit(2);
+		} catch (IOException e) {
+			System.err.println("Error closing script file "+actionsFName+".");
+			System.exit(3);
+		}
+		
 	}
 	
 	
@@ -768,11 +802,13 @@ public class Node {
 		
 		boolean revival = (args[2].trim().equals("revive"));
 		Node n = new Node(args[0],args[1], revival);
-		MessageParser parser= new MessageParser( Integer.toString(n.myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
-		
+		//MessageParser parser= new MessageParser( Integer.toString(n.myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
+
 		Thread.sleep(1000);
 		if(n.myID==1){
-			n.sendMsg(0,parser.composeMessage());
+			n.readActions("ActionList.txt");
+			for (MessageParser parser : n.ActionList)
+				n.sendMsg(0,parser.composeMessage());
 			System.out.println("I want to start 3PC");
 		}
         if(n.myID == n.coordinator)
