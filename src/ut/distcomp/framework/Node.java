@@ -25,8 +25,8 @@ public class Node {
     private StateAC myState = StateAC.IDLE;
     private ArrayList<Integer> DecisionList = new ArrayList<Integer>();
     private ArrayList<Integer> ACKList = new ArrayList<Integer>();
-    private HashSet<Integer> upSet;
-	
+    private HashSet<Integer> upSet = new HashSet<Integer>();
+	private MessageParser currentAction = null;
 	public Node(String configName, String dtL) {
 		try {
 			config = new Config(configName);
@@ -37,7 +37,7 @@ public class Node {
 		playList = new Hashtable<String,String>();
 		dtLog = new DTLog(dtL);
 		running = true;
-        viewNumber = 5;
+        viewNumber = config.numProcesses;
 		myID = getID();
 		for(int i = 0 ; i < viewNumber; i++){
 			if(i!=myID){
@@ -48,6 +48,12 @@ public class Node {
 				ACKList.add(1);
 			}
 		}
+		
+		for(int j = 0 ; j < viewNumber; j++){
+			upSet.add(j);
+		}
+		
+		dtLog.writeEntry(myState, "UPset: "+ upSet);
 	}
 	
 	/*
@@ -105,6 +111,8 @@ public class Node {
         MessageParser parser = new MessageParser(message);
         // start 3 PC
         if (parser.getMessageHeader().toString().equals(TransitionMsg.CHANGE_REQ.toString())){
+        	myState = StateAC.START_3PC;
+        	dtLog.writeEntry(myState, parser.getTransaction());
         	parser.setMessageHeader(TransitionMsg.VOTE_REQ.toString());
         		for(int i = 0 ; i < viewNumber ; i++){
         			if(i!=coordinator){
@@ -112,7 +120,7 @@ public class Node {
         				sendMsg(i, parser.composeMessage() );
         			}
         		}
-        		myState = StateAC.START_3PC;
+        		myState = StateAC.WAIT_FOR_VOTE_DEC;
         		dtLog.writeEntry(myState, parser.getTransaction());
         }
         // receive VOTE_DEC YES
@@ -407,7 +415,7 @@ public class Node {
              List<String> messages = null;
              long startTime = (System.currentTimeMillis()+getTimeOut());
              long smallTimeout = getTimeOut()/10;
-
+             Boolean atLeastOneBoolean= false;
              // receive message until getTimeOut() and there is no failure
              while(System.currentTimeMillis() < startTime) {
                  Thread.sleep(smallTimeout);
@@ -416,15 +424,35 @@ public class Node {
                  for(String m:messages) {
                     processReceivedMsgAscoordinator(m);
                	    //System.out.println("I am Here");
-                    
+                    currentAction = new MessageParser(m);
+                    atLeastOneBoolean = true;
                  }
              }
              
-             // There is no comming message
-             if(messages.isEmpty()){
-            	  
-            	  System.out.println("Ohh, seems failure happens");
+             // There is no vote decision comming
+             if(!atLeastOneBoolean && myState==StateAC.WAIT_FOR_VOTE_DEC){
+            	  System.out.println("Time out action for coordinator wait for vote Decision");
+            	  currentAction.setMessageHeader(TransitionMsg.ABORT.toString());
+          		  for(int j = 0 ; j < viewNumber ; j++){
+          		 	if(j != coordinator ){
+          				sendMsg(j, currentAction.composeMessage());
+          			}
+          		  }
             	  break;
+             }
+             // if there is no ack come back
+             else if (!atLeastOneBoolean && myState == StateAC.WAIT_FOR_ACKS){
+            	 System.out.println("Time out action for coordinator ACK");
+            	 currentAction.setMessageHeader(TransitionMsg.COMMIT.toString());
+         		 for(int j = 0 ; j < viewNumber ; j++){
+         		 	if(j != coordinator ){
+         				sendMsg(j, currentAction.composeMessage());
+         			}
+         		 }
+         		 //log
+         		
+                myState = StateAC.COMMIT;
+                dtLog.writeEntry(myState, currentAction.getTransaction());
              }
 		 }
 	}
@@ -441,18 +469,27 @@ public class Node {
           while(true){
               List<String> messages;
               List<MessageParser> parsers = null;
+              MessageParser current = new MessageParser();
               long startTime = (System.currentTimeMillis()+getTimeOut());
               long smallTimeout = getTimeOut()/10;
-
+              boolean atleastone = false;
               while(System.currentTimeMillis() < startTime) {
                   Thread.sleep(smallTimeout);
                   messages = (nc.getReceivedMsgs());
                  
                   for(String m :messages) {
+                	   
                        processReceivedMsgAsParticipant(m);
-                	 
+                	   atleastone = true;
                      
                   }
+              }
+              
+              // wait for VOTE request from coordinator
+              if(!atleastone && myState == StateAC.IDLE){
+            	  	  System.out.println("Participant wait for Coordinator's Vote Request");
+            	      myState = StateAC.ABORT;
+            	      dtLog.writeEntry(myState, "wait for vote request");
               }
               
               
@@ -626,12 +663,13 @@ public class Node {
 	public static void main(String[] args) throws InterruptedException {
 		
 		Node n = new Node(args[0],args[1]);
-        System.out.println(n.myID);
 		MessageParser parser= new MessageParser( Integer.toString(n.myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
 		
-		if(n.myID==1)
+		Thread.sleep(1000);
+		if(n.myID==1){
 			n.sendMsg(0,parser.composeMessage());
-
+			System.out.println("I want to start 3PC");
+		}
         if(n.myID == coordinator)
            n.getMessageAsCoordinator();
         else
