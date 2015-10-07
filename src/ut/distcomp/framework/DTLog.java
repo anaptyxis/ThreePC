@@ -25,11 +25,11 @@ public class DTLog {
 	FileWriter writer;
 	BufferedReader reader; 
 	
-	public DTLog(String name) {
+	public DTLog(String name, boolean append) {
 		logFileName = name;
 		logFile = new File(logFileName);
 		try {
-			writer = new FileWriter(logFile);
+			writer = new FileWriter(logFile, append);
 			reader = new BufferedReader(new FileReader(logFile));
 		} catch (IOException e) {
 			System.err.println("Error opening LOG FILE "+logFileName+".");

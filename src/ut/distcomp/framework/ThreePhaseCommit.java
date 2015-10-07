@@ -141,7 +141,7 @@ public class ThreePhaseCommit {
 		String classpath = System.getProperty("java.class.path");
 		for (int i = 0; i < numProcs; i++) {
 			System.out.println("3PC Controller: Starting process p"+i);
-			ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+i+".txt","DTLog"+i+".txt");
+			ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+i+".txt","DTLog"+i+".txt", "new");
 			pb.inheritIO();
 			try {
 				procList.add(pb.start());
@@ -183,9 +183,16 @@ public class ThreePhaseCommit {
 
 	public void revive(int procID) {
 		
-		//TODO: recreate Process
-		//TODO: Process will have to determine its state through log
-		
+		String classpath = System.getProperty("java.class.path");
+		System.out.println("3PC Controller: Reviving process p"+procID);
+		ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+procID+".txt","DTLog"+procID+".txt", "revive");
+		pb.inheritIO();
+		try {
+			procList.add(pb.start());
+		} catch (IOException e) {
+			System.err.println("Trouble reviving process p"+procID);
+			e.printStackTrace();
+		}	
 	}
 
 	public void reviveLast() {
@@ -197,7 +204,7 @@ public class ThreePhaseCommit {
 
 	public void reviveAll() {
 
-/*		System.out.print("3PC Controller: Reviving ALL dead processes: ");
+		System.out.print("3PC Controller: Reviving ALL dead processes: ");
 		for (int i = 0; i < procList.size(); i++) {
 		  if (procList.get(i) == null) {
 			  System.out.print("p"+i+"\t");
@@ -205,9 +212,6 @@ public class ThreePhaseCommit {
 		  }
 		}
 		System.out.println();
-*/
-		
-		
 	}
 
 	public void partialMessage(int procID, int numMsgs) {

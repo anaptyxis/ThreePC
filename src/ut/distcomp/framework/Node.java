@@ -23,17 +23,17 @@ public class Node {
 	private boolean running;   //only altered if process shuts down gracefully
 	private int myID;
     private StateAC myState = StateAC.IDLE;
-    private ArrayList<Integer> DecisionList = new ArrayList<Integer>();
+    private ArrayList<Integer> DecisionList = new ArrayList<Integer>(); //-1 NO, 0 NO DECISION, 1 YES
     private ArrayList<Integer> ACKList = new ArrayList<Integer>();
     private HashSet<Integer> upSet = new HashSet<Integer>();
 	private MessageParser currentAction = null;
 	
-	public Node(String configName, String dtL) {
+	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
 		//a revival. We need to put a handler in to bring the process 
 		//back up. Otherwise, the process/Node is constructed from scratch.
 		// TODO: validate that DTLog is not destructively opened on
-		//		 revivial.
+		//		 revival.
 		
 		try {
 			config = new Config(configName);
@@ -42,8 +42,12 @@ public class Node {
 		}
 		nc = new NetController(config);
 		playList = new Hashtable<String,String>();
-		dtLog = new DTLog(dtL);
-		running = true;
+		dtLog = new DTLog(dtL, revival);	//revival == Node recovering?
+/*		String logEntry = dtLog.readEntry();
+		while (logEntry != null) {
+			logEntry = dtLog.readEntry();	
+		}
+*/		running = true;
         viewNumber = config.numProcesses;
 		myID = getID();
 		for(int i = 0 ; i < viewNumber; i++){
@@ -675,7 +679,8 @@ public class Node {
 	  */
 	public static void main(String[] args) throws InterruptedException {
 		
-		Node n = new Node(args[0],args[1]);
+		boolean revival = (args[2].trim().equals("revive"));
+		Node n = new Node(args[0],args[1], revival);
 		MessageParser parser= new MessageParser( Integer.toString(n.myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
 		
 		Thread.sleep(1000);
