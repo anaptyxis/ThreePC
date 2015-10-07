@@ -27,7 +27,14 @@ public class Node {
     private ArrayList<Integer> ACKList = new ArrayList<Integer>();
     private HashSet<Integer> upSet = new HashSet<Integer>();
 	private MessageParser currentAction = null;
+	
 	public Node(String configName, String dtL) {
+		//if dtLog is not empty, then failure has occurred and this is 
+		//a revival. We need to put a handler in to bring the process 
+		//back up. Otherwise, the process/Node is constructed from scratch.
+		// TODO: validate that DTLog is not destructively opened on
+		//		 revivial.
+		
 		try {
 			config = new Config(configName);
 		} catch (IOException e) {
