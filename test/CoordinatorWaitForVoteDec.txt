@@ -1,5 +1,5 @@
 createProcesses 5
-wait 3
+wait 2
 kill 1
-wait 20
+wait 30
 killAll
