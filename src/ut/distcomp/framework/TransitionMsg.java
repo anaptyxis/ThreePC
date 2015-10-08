@@ -17,7 +17,8 @@ package ut.distcomp.framework;
         STATE_REQ,
         STATE_RES,
         UR_ELECTED,
-        RECOVER_REQ;
+        RECOVER_REQ,
+        RECOVER_REP;
 
 
         private String string;
@@ -34,7 +35,8 @@ package ut.distcomp.framework;
             STATE_REQ.string ="state_req";
             STATE_RES.string ="state_res";
             UR_ELECTED.string = "ur_elected";
-            RECOVER_REQ.string = "recover_req"
+            RECOVER_REQ.string = "recover_req";
+            RECOVER_REP.string = "reciver_rep";
 ;        }
         public String toString() {
             return string;

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 
@@ -14,7 +15,12 @@ public class Recovery {
 		private HashSet<Integer> upSet;
 		Hashtable<String, String> playList;
 		private boolean askOthers ;
-		
+		private String old_decision = new String() ;
+		private ArrayList<MessageParser> decisionList;
+		private boolean pending ;
+		private MessageParser pendingDecision;
+		ArrayList<StateAC> stateList ;
+		String whatIdo = new String();
 		public Recovery(String filename) {
 			// TODO Auto-generated constructor stub
 			filenameString = filename;
@@ -22,7 +28,12 @@ public class Recovery {
 			playList = new Hashtable<String, String>();
 		    lastState = null;
 		    askOthers = false;
-		    
+		    old_decision = null;
+		    pending = false;
+		    stateList = new ArrayList<StateAC>();
+		    whatIdo = null;
+		    decisionList = new ArrayList<MessageParser>();
+		    pendingDecision = new MessageParser();
 		}
 		
 		/*
@@ -30,33 +41,73 @@ public class Recovery {
 		 * Parse the log file
 		 * 
 		 */
-		private void parseLogFile(){
+		public void parseLogFile(){
 			try {
 				BufferedReader actionListReader = new BufferedReader(new FileReader(new File(filenameString)));
 				String line = null;
 				do {
 					line = actionListReader.readLine();  
+					//System.out.println("The line is "+line);
+					if(line != null){
 					String[] split_input = line.split(";");
 					int size = split_input.length;
 					//get the most recent UP set
 					if(line.contains("UPset")){
 						setHashSet(split_input[size-1]);
+						stateList.add(StateAC.IDLE);
+					}
+					// there is a decision
+					else if(line.contains("decision")){
+						 pending = true;
+						 if(line.contains("yes")){
+							 old_decision = "yes";
+						 }
+						 else if (line.contains("no")){
+							 old_decision = "no";
+						 }
+						 pending = true;
+						 MessageParser tmp = new MessageParser();
+						 tmp.setAction(split_input[3]);
+						 tmp.setSong(split_input[4]);
+						 tmp.setURl(split_input[5]);
+						 
+						 pendingDecision = tmp;
+					} 
+					// there is uncertain
+					else if(line.contains("uncertain")){
+						 stateList.add(StateAC.UNCERTAIN);
+						 pending = true;
+					}
+					
+					// there is committable infomation
+					else if (line.contains("commitable")) {
+						stateList.add(StateAC.COMMITABLE);
+						pending = true;
 					}
 					
 					// Get the action
-					if(line.contains("commit") && !line.contains("commitable")){
+					else if(line.contains("commit") && !line.contains("commitable")){
 						  MessageParser tmp = new MessageParser();
 						  tmp.setAction(split_input[3]);
 						  tmp.setSong(split_input[4]);
 						  tmp.setURl(split_input[5]);
 						  playListFollowAction(tmp);
+						  decisionList.add(tmp);
+						  
+						  // clear all the pending data
+						  pending = false;
+						  stateList.clear();
+						  old_decision = null;
 					}
 					
 					
 					// Get the last state
 					lastState = stringToState(split_input[0]);
-					
-				}while(line != null);
+					}
+				}while(line != null && !line.isEmpty());
+				
+				actionListReader.close();
+				
 			} catch (FileNotFoundException e) {
 				System.err.println("Error reading script file "+filenameString+".");
 				System.exit(2);
@@ -70,9 +121,59 @@ public class Recovery {
 		 *  make decision when recovery
 		 */
 		
-		private void makeDecision(){
-			
+		public void makeDecision(){
+			System.out.println("Last state is "+ lastState.toString());
+		    // Fails before sending Yes
+			if(old_decision.equals("yes") && lastState == StateAC.DECIDE_YES){
+				 askOthers = false;
+				 whatIdo = "abort";
+			}
+			else if(old_decision.equals("no") && lastState == StateAC.DECIDE_NO){
+				askOthers = false;
+				whatIdo = "abort";
+			}
+			else if(old_decision.equals("yes") && lastState == StateAC.UNCERTAIN){
+				askOthers = true;
+				whatIdo = "decide_yes";
+			}
+			else if(lastState == StateAC.COMMITABLE){
+				askOthers = true;
+				whatIdo = "decide_yes";
+			}
 		}
+		
+		/*
+		 * 
+		 */
+		
+		public MessageParser getPendingDecision() {
+			 return pendingDecision;
+		}
+		
+		/*
+		 *   Return the info whether there is pending decision
+		 */
+		
+		public boolean getPendingInfo() {
+			return pending;
+		}
+		
+		/*
+		 *  Return Decision List
+		 */
+		
+		public ArrayList<MessageParser> getDecisionList() {
+				return decisionList;
+		}
+		
+		/*
+		 *   Return boolean whether I should ask others to determine
+		 */
+		
+		public boolean DoAskOthers() {
+			return askOthers;
+		}
+		
 		/*
 		 * Set hash set from log file 
 		*/
@@ -82,13 +183,25 @@ public class Recovery {
 		        input = input.replace("]", "") ;
 		        input = input.replaceAll(" ", "");
 		        String[] tmp = input.split(":");
-		        String[] items=tmp[1].split(",");
-		        upSet = new HashSet<Integer>();
+		        if (tmp.length==2){
+		        	String[] items=tmp[1].split(",");
+		        	upSet = new HashSet<Integer>();
 
-		        for(String item: items) {
-		            upSet.add(Integer.valueOf(Integer.parseInt(item)));
+		        	for(String item: items) {
+		        		upSet.add(Integer.valueOf(Integer.parseInt(item)));
+		        	}
 		        }
 		    }
+		
+		/*
+		 *  Get What I should Do 
+		 * 
+		 */
+		public String getWhatIdo() {
+			return whatIdo;
+		}
+		
+		
 		/*
 		 *  Get the playlist , return the hashtable 
 		 */
