@@ -1,5 +1,6 @@
 package ut.distcomp.framework;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Scanner;
 
 
 /**
@@ -35,6 +37,7 @@ public class Node {
 	private MessageParser currentAction = null;
 	private int msgCount;
 	private int msgBound;
+	private Scanner inputFromController;
 	
 	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
@@ -59,6 +62,7 @@ public class Node {
 		this.revival = revival;
 		msgCount = 0;
 		msgBound = Integer.MAX_VALUE;		//start with no bound on msgCount
+		inputFromController = new Scanner(System.in);	
         viewNumber = config.numProcesses;
         currentAction = new MessageParser();
 		myID = getID();
@@ -130,10 +134,9 @@ public class Node {
 			BufferedReader actionListReader = new BufferedReader(new FileReader(new File(actionsFName)));
 			String line = null;
 			do {
-				line = actionListReader.readLine();  
+				line = actionListReader.readLine();
 				if (line != null) {
 					String[] strArr = line.split(" ");
-					System.out.println(strArr.length);
 					if (strArr[0].equals("add"))
 						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + strArr[2] + ";"+ StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 					if (strArr[0].equals("edit"))
@@ -585,6 +588,16 @@ public class Node {
 	
 	private void getMessageAsCoordinator() throws InterruptedException{
 		 while(true){
+			 
+			 //first check to see if any incoming messages from controller
+			 if (inputFromController.hasNextLine()) { 
+				String incoming = inputFromController.nextLine();
+				String[] strArr = incoming.split(" ");
+				if (strArr[0].equals("partialMessage"))
+					setMsgBound(Integer.parseInt(strArr[1]));					
+			 }
+
+			 
              List<String> messages = null;
              ArrayList<MessageParser> stateReqList = new ArrayList<MessageParser>();
              long startTime = (System.currentTimeMillis()+getTimeOut());
@@ -720,7 +733,16 @@ public class Node {
 	 private void getMessagesAsParticipant() throws InterruptedException {
 		 
           while(true){
-              List<String> messages ;
+
+ 			 //first check to see if any incoming messages from controller
+ 			 if (inputFromController.hasNextLine()) { 
+ 				String incoming = inputFromController.nextLine();
+ 				String[] strArr = incoming.split(" ");
+ 				if (strArr[0].equals("partialMessage"))
+ 					setMsgBound(Integer.parseInt(strArr[1]));					
+ 			 }       
+        	  
+        	  List<String> messages ;
               long startTime = (System.currentTimeMillis()+getTimeOut());
               long smallTimeout = getTimeOut()/10;
               boolean atleastone = false;
@@ -943,6 +965,7 @@ public class Node {
 	  }
 	  
 	  public void sendMsg(int procID, String msg) {
+		  System.out.println(myID+" msgCount:"+msgCount+"; msgBound:"+msgBound);
 		  	while(msgCount >= msgBound);			//no messages sent until 
 			this.nc.sendMsg(procID, msg);			//bound adjusted
 			msgCount++;
@@ -957,7 +980,7 @@ public class Node {
 			this.nc.shutdown();
 			running = false;
 	  }
-	 
+	  
 	 /*
 	  * 
 	  * 

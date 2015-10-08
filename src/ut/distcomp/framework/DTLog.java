@@ -13,7 +13,7 @@ import java.util.Date;
  * 
  * A DTLog entry is a String containing:
  * 
- *   "timestamp" "transition" "{add,remove,edit}" "1���3 parameters" "source" "destination"
+ *   "timestamp" "transition" "{add,remove,edit}" "1--3 parameters" "source" "destination"
  * 
  * @author Bradley Beth
  *
