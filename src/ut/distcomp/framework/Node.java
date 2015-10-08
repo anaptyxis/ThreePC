@@ -19,7 +19,7 @@ import java.util.Scanner;
  *
  */
 public class Node {
-
+	private static final String EXTENSION = ".txt";
 	private Config config;
 	private NetController nc;
 	private Hashtable<String,String> playList;
@@ -38,6 +38,11 @@ public class Node {
 	private int msgCount;
 	private int msgBound;
 	private Scanner inputFromController;
+	
+	private ArrayList<MessageParser> oldDecisionList = new ArrayList<MessageParser>();
+	private Recovery recover = null;
+	private boolean pending = false;
+	
 	
 	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
@@ -58,30 +63,78 @@ public class Node {
 		while (logEntry != null) {
 			logEntry = dtLog.readEntry();	
 		}
-*/		running = true;
+*/	
+		running = true;
 		this.revival = revival;
+		myID = getID();
+		currentAction = new MessageParser();
 		msgCount = 0;
 		msgBound = Integer.MAX_VALUE;		//start with no bound on msgCount
 		inputFromController = new Scanner(System.in);	
-        viewNumber = config.numProcesses;
-        currentAction = new MessageParser();
-		myID = getID();
-		for(int i = 0 ; i < viewNumber; i++){
-			DecisionList.add(0);
-			if(i!=myID){
-				
-				ACKList.add(0);
-			}else{
-				ACKList.add(1);
+		// not the revival case
+		if(!revival){
+			System.out.print("I am fresh process");
+			viewNumber = config.numProcesses;
+      
+			for(int i = 0 ; i < viewNumber; i++){
+				DecisionList.add(0);
+				if(i!=myID){
+					ACKList.add(0);
+				}else{
+					ACKList.add(1);
+				}
 			}
-		}
-		
-		for(int j = 0 ; j < viewNumber; j++){
-			upSet.add(j);
-		}
-		
-		dtLog.writeEntry(myState, "UPset: "+ upSet);
-	}
+    
+			for(int j = 0 ; j < config.numProcesses; j++){
+				upSet.add(j);
+			}
+    
+			dtLog.writeEntry(myState, "UPset: "+ upSet);
+			oldDecisionList = new ArrayList<MessageParser>();
+		}else{
+			//System.out.print("I am recover process "+Integer.toString(myID)+"  "+ "DTLog"+Integer.toString(myID)+EXTENSION);
+			recover = new Recovery("DTLog"+Integer.toString(myID)+EXTENSION);
+			recover.parseLogFile();
+			recover.makeDecision();
+      
+			oldDecisionList = recover.getDecisionList();
+			playList = recover.getPlayList();
+			upSet = recover.getUpSet();
+			myState = recover.getLastState();
+			pending = recover.getPendingInfo();
+			//====DEBUG=========
+			System.out.println("last state is "+recover.getLastState().toString()+
+          "  I am need to ask others is " + recover.DoAskOthers() +" and the upset is  "
+          +upSet);
+        
+			if(recover.DoAskOthers()){
+				// ask others to get infomation
+				askOtherForHelp(recover.getPendingDecision());
+			}else{
+				if(recover.getWhatIdo().equals("abort")){
+					myState = StateAC.ABORT;
+					dtLog.writeEntry(myState, recover.getPendingDecision().getTransaction());
+				}
+			}
+    }
+  }
+
+  /*
+   *   From revive ask other for help
+   * 
+   */
+  
+  private void askOtherForHelp(MessageParser parser){
+      parser.setMessageHeader(TransitionMsg.RECOVER_REQ.toString());
+      parser.setSource(Integer.toString(myID));
+      for (int m : upSet){
+        if(m!=myID){
+          sendMsg(m, parser.composeMessage());
+          //System.out.println("What I print is" + parser.composeMessage());
+        }
+      }
+      
+  }
 	
 	/*
 	 * add (songName, URL) to the local playList.
@@ -171,7 +224,7 @@ public class Node {
         	parser.setMessageHeader(TransitionMsg.VOTE_REQ.toString());
         		for(int i = 0 ; i < viewNumber ; i++){
         			if(i!=coordinator){
-                       // System.out.println("send message to " + Integer.toString(i));
+                        //System.out.println("send message to " + Integer.toString(i));
         				sendMsg(i, parser.composeMessage() );
         			}
         		}
@@ -490,6 +543,7 @@ public class Node {
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.COMMIT.toString())){
         		
              	playListFollowAction(parser);
+              oldDecisionList.add(parser);
         }
 
         //  Receive Abort message
@@ -513,7 +567,33 @@ public class Node {
         //Receive recover request
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REQ.toString())){
-        	
+        	 for(MessageParser msgParser : oldDecisionList){
+               if(isSameAction(parser, msgParser)){
+                 int j = Integer.parseInt(parser.getSource());
+                 parser.setMessageHeader(TransitionMsg.RECOVER_REP.toString());
+                 parser.setStateInfo(StateAC.COMMIT);
+                 parser.setUpSet(upSet);
+                 sendMsg(j, parser.composeWithUpset());
+                 System.out.println("I am helping others to revive"); 
+               }
+            }
+        }
+
+         //Receive recover response
+
+        else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REP.toString())){
+          // get the decision only when there is pending info
+          if(pending){    
+             if(parser.getStateInfo()==StateAC.COMMIT){
+                 upSet = parser.getUpSet();
+                 myState = StateAC.COMMIT;
+                 dtLog.writeEntry(myState, parser.getTransaction());
+                 oldDecisionList.add(parser);
+                 pending = false;
+                 System.out.println("My pending decision is resolved");
+              } 
+          }
+          
         }
         
         //Receive UR_ELECTED message, I am new coordinator now
@@ -544,7 +624,24 @@ public class Node {
         }
     }
 
-
+  /*
+     *  Check Whether the 2 parser contain same action
+     */
+    
+    private boolean isSameAction(MessageParser a, MessageParser b){
+        boolean result = true;
+        if(!a.getInstruction().equals(b.getInstruction()))
+          result = false;
+        
+        if(!a.getSong().equals(b.getSong()))
+          result = false;
+        
+        if(!a.getUrl().equals(b.getUrl()))
+          result = false;
+        
+        return result;
+      
+    }
 
 
 	public int getID() {
@@ -609,8 +706,8 @@ public class Node {
 		 while(true){
 			 
 			 //first check to see if any incoming messages from controller
-			 checkForControllerDirectives();
-			 
+			 //checkForControllerDirectives();
+			// System.out.println("I am here");
              List<String> messages = null;
              ArrayList<MessageParser> stateReqList = new ArrayList<MessageParser>();
              long startTime = (System.currentTimeMillis()+getTimeOut());
@@ -748,7 +845,7 @@ public class Node {
           while(true){
 
   			 //first check to see if any incoming messages from controller
-  			 checkForControllerDirectives();
+  			 //checkForControllerDirectives();
         	  
         	  List<String> messages ;
               long startTime = (System.currentTimeMillis()+getTimeOut());
@@ -973,9 +1070,10 @@ public class Node {
 	  }
 	  
 	  public void sendMsg(int procID, String msg) {
-		  System.out.println(myID+" msgCount:"+msgCount+"; msgBound:"+msgBound);
+		    System.out.println(myID+" msgCount:"+msgCount+"; msgBound:"+msgBound);
 		  	while(msgCount >= msgBound);			//no messages sent until 
 			this.nc.sendMsg(procID, msg);			//bound adjusted
+			//System.out.println("send message to " + Integer.toString(procID));
 			msgCount++;
 	  }
 		
@@ -1001,19 +1099,26 @@ public class Node {
 		boolean revival = (args[2].trim().equals("revive"));
 		Node n = new Node(args[0],args[1], revival);
 		//MessageParser parser= new MessageParser( Integer.toString(n.myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
-
-		Thread.sleep(1000);
-		if(n.myID==1){
-			n.readActions("ActionList.txt");
-			for (MessageParser parser : n.ActionList)
-				n.sendMsg(0,parser.composeMessage());
-			System.out.println("I want to start 3PC");
-		}
-        if(n.myID == n.coordinator)
-           n.getMessageAsCoordinator();
-        else
-           n.getMessagesAsParticipant();
-		
-	}
-	
+   
+		// revival start
+		if(revival){
+			n.getMessagesAsParticipant();
+		}else{
+			// fresh start
+			if(n.myID==1){
+				n.readActions("ActionList.txt");
+				for (MessageParser parser : n.ActionList)
+					n.sendMsg(0,parser.composeMessage());
+					System.out.println("I want to start 3PC");
+				}
+			Thread.sleep(1000);
+			if(n.myID == n.coordinator)
+				n.getMessageAsCoordinator();
+			else
+				n.getMessagesAsParticipant();
+      
+      
+    }
+  }
+  
 }
