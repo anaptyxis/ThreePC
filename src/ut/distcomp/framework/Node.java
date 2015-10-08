@@ -33,6 +33,7 @@ public class Node {
     private HashSet<Integer> upSet = new HashSet<Integer>();
     private ArrayList<MessageParser> ActionList = new ArrayList<MessageParser>();
 	private MessageParser currentAction = null;
+	private int msgCount;
 	
 	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
@@ -55,6 +56,7 @@ public class Node {
 		}
 */		running = true;
 		this.revival = revival;
+		msgCount = 0;
         viewNumber = config.numProcesses;
         currentAction = new MessageParser();
 		myID = getID();
