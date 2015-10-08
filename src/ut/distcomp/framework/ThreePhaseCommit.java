@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 
 /**
@@ -141,7 +142,9 @@ public class ThreePhaseCommit {
 		for (int i = 0; i < numProcs; i++) {
 			System.out.println("3PC Controller: Starting process p"+i);
 			ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+i+".txt","DTLog"+i+".txt", "new");
-			pb.inheritIO();
+			//TODO: pb.redirectInput();
+			pb.redirectOutput(Redirect.INHERIT);
+			pb.redirectError(Redirect.INHERIT);		
 			try {
 				procList.add(pb.start());
 			} catch (IOException e) {
@@ -185,7 +188,9 @@ public class ThreePhaseCommit {
 		String classpath = System.getProperty("java.class.path");
 		System.out.println("3PC Controller: Reviving process p"+procID);
 		ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+procID+".txt","DTLog"+procID+".txt", "revive");
-		pb.inheritIO();
+		//TODO: pb.redirectInput();
+		pb.redirectOutput(Redirect.INHERIT);
+		pb.redirectError(Redirect.INHERIT);
 		try {
 			procList.set(procID,pb.start());
 		} catch (IOException e) {
