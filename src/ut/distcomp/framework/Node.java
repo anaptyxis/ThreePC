@@ -59,11 +59,11 @@ public class Node {
         currentAction = new MessageParser();
 		myID = getID();
 		for(int i = 0 ; i < viewNumber; i++){
+			DecisionList.add(0);
 			if(i!=myID){
-				DecisionList.add(0);
+				
 				ACKList.add(0);
 			}else{
-				DecisionList.add(1);
 				ACKList.add(1);
 			}
 		}
@@ -168,6 +168,7 @@ public class Node {
         				sendMsg(i, parser.composeMessage() );
         			}
         		}
+        		playlistVoteActionAsCoordinator(parser);
         		myState = StateAC.WAIT_FOR_VOTE_DEC;
         		dtLog.writeEntry(myState, parser.getTransaction());
         }
@@ -276,14 +277,21 @@ public class Node {
                 String song = parser.getOldSong();
                 //vote yes
                 if(playList.containsKey(song)){
+                	
+                	myState = StateAC.DECIDE_YES;
+                    dtLog.writeEntry(myState, parser.getTransaction());
+                    
                     parser.setMessageHeader(TransitionMsg.YES.toString());
                     parser.setSource(Integer.toString(myID));
                     sendMsg(coordinator,parser.composeMessage());
+                    
                     myState = StateAC.UNCERTAIN;
                     dtLog.writeEntry(myState, parser.getTransaction());
                 }
                 //vote no
                 else{
+                	myState = StateAC.DECIDE_NO;
+                    dtLog.writeEntry(myState, parser.getTransaction());
                     parser.setMessageHeader(TransitionMsg.NO.toString());
                     parser.setSource(Integer.toString(myID));
                     sendMsg(coordinator,parser.composeMessage());
@@ -297,6 +305,8 @@ public class Node {
                String song = parser.getSong();
                //vote yes
                if(!playList.containsKey(song)){
+            	   myState = StateAC.DECIDE_YES;
+                   dtLog.writeEntry(myState, parser.getTransaction());
                    parser.setMessageHeader(TransitionMsg.YES.toString());
                    parser.setSource(Integer.toString(myID));
                    sendMsg(coordinator,parser.composeMessage());
@@ -305,6 +315,8 @@ public class Node {
                }
                //vote no
                else{
+            	   myState = StateAC.DECIDE_NO;
+                   dtLog.writeEntry(myState, parser.getTransaction());
                    parser.setMessageHeader(TransitionMsg.NO.toString());
                    parser.setSource(Integer.toString(myID));
                    sendMsg(coordinator,parser.composeMessage());
@@ -318,6 +330,8 @@ public class Node {
                //vote yes
                String song = parser.getSong();
                if(playList.containsKey(song)){
+            	   myState = StateAC.DECIDE_YES;
+                   dtLog.writeEntry(myState, parser.getTransaction());
                    parser.setMessageHeader(TransitionMsg.YES.toString());
                    parser.setSource(Integer.toString(myID));
                    sendMsg(coordinator,parser.composeMessage());
@@ -326,6 +340,8 @@ public class Node {
                }
                //vote no
                else{
+            	   myState = StateAC.DECIDE_NO;
+                   dtLog.writeEntry(myState, parser.getTransaction());
                    parser.setMessageHeader(TransitionMsg.NO.toString());
                    parser.setSource(Integer.toString(myID));
                    sendMsg(coordinator,parser.composeMessage());
@@ -338,6 +354,64 @@ public class Node {
 
         }
     }
+    
+    
+    private void playlistVoteActionAsCoordinator(MessageParser parser){
+   	 // edit request
+       if (parser.getInstruction().equalsIgnoreCase("edit")){
+               String song = parser.getOldSong();
+               //vote yes
+               if(playList.containsKey(song)){
+               	
+               	   myState = StateAC.DECIDE_YES;
+                   dtLog.writeEntry(myState, parser.getTransaction());
+                   DecisionList.set(coordinator, 1);
+               }
+               //vote no
+               else{
+               	   myState = StateAC.DECIDE_NO;
+                   dtLog.writeEntry(myState, parser.getTransaction());
+                   DecisionList.set(coordinator, -1);
+               }
+       }
+       //request for add
+       else if (parser.getInstruction().equalsIgnoreCase("add")){
+              String song = parser.getSong();
+              //vote yes
+              if(!playList.containsKey(song)){
+           	      myState = StateAC.DECIDE_YES;
+                  dtLog.writeEntry(myState, parser.getTransaction());
+                  DecisionList.set(coordinator, 1);
+              }
+              //vote no
+              else{
+           	      myState = StateAC.DECIDE_NO;
+                  dtLog.writeEntry(myState, parser.getTransaction());
+                  DecisionList.set(coordinator, -1);
+
+              }
+       }
+       // request for delete
+       else if (parser.getInstruction().equalsIgnoreCase("del")){
+              //vote yes
+              String song = parser.getSong();
+              if(playList.containsKey(song)){
+           	      myState = StateAC.DECIDE_YES;
+                  dtLog.writeEntry(myState, parser.getTransaction());
+                  DecisionList.set(coordinator, 1);
+              }
+              //vote no
+              else{
+           	      myState = StateAC.DECIDE_NO;
+                  dtLog.writeEntry(myState, parser.getTransaction());
+                  DecisionList.set(coordinator, -11);
+              }
+       }
+       // wrong vote request
+       else {
+
+       }
+   }
     
     /*
      * 
@@ -667,7 +741,7 @@ public class Node {
                 		   }
                 	   }
                 	   else{
-                		   System.out.println("Receive message :  "+ messages);
+                		  // System.out.println("Receive message :  "+ messages);
                 		   processReceivedMsgAsParticipant(m);
                 		  
                 	   }

@@ -13,7 +13,7 @@ public class Recovery {
 		private StateAC lastState;
 		private HashSet<Integer> upSet;
 		Hashtable<String, String> playList;
-		
+		private boolean askOthers ;
 		
 		public Recovery(String filename) {
 			// TODO Auto-generated constructor stub
@@ -21,6 +21,8 @@ public class Recovery {
 			upSet = new HashSet<Integer>();
 			playList = new Hashtable<String, String>();
 		    lastState = null;
+		    askOthers = false;
+		    
 		}
 		
 		/*
@@ -35,14 +37,18 @@ public class Recovery {
 				do {
 					line = actionListReader.readLine();  
 					String[] split_input = line.split(";");
+					int size = split_input.length;
 					//get the most recent UP set
 					if(line.contains("UPset")){
-						
+						setHashSet(split_input[size-1]);
 					}
 					
 					// Get the action
 					if(line.contains("commit") && !line.contains("commitable")){
 						  MessageParser tmp = new MessageParser();
+						  tmp.setAction(split_input[3]);
+						  tmp.setSong(split_input[4]);
+						  tmp.setURl(split_input[5]);
 						  playListFollowAction(tmp);
 					}
 					
@@ -60,6 +66,29 @@ public class Recovery {
 			}
 		}
 		
+		/* 
+		 *  make decision when recovery
+		 */
+		
+		private void makeDecision(){
+			
+		}
+		/*
+		 * Set hash set from log file 
+		*/
+		
+		public void setHashSet(String input) {
+		        input = input.replace("[", "") ;
+		        input = input.replace("]", "") ;
+		        input = input.replaceAll(" ", "");
+		        String[] tmp = input.split(":");
+		        String[] items=tmp[1].split(",");
+		        upSet = new HashSet<Integer>();
+
+		        for(String item: items) {
+		            upSet.add(Integer.valueOf(Integer.parseInt(item)));
+		        }
+		    }
 		/*
 		 *  Get the playlist , return the hashtable 
 		 */
