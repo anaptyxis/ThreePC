@@ -131,11 +131,11 @@ public class Node {
 					String[] strArr = line.split(" ");
 					System.out.println(strArr.length);
 					if (strArr[0].equals("add"))
-						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + strArr[2] + ";"+ TransitionMsg.CHANGE_REQ.toString()));
+						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + strArr[2] + ";"+ StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 					if (strArr[0].equals("edit"))
-						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + "," + strArr[2] + ";" + strArr[3] + ";" + TransitionMsg.CHANGE_REQ.toString()));
+						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + "," + strArr[2] + ";" + strArr[3] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 					if (strArr[0].equals("remove"))
-						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + TransitionMsg.CHANGE_REQ.toString()));
+						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 					System.out.println(line);
 				}
 			} while (line != null); 						
@@ -522,14 +522,19 @@ public class Node {
              }
              // if there is message comming, and the message is about the state response
              if(atLeastOneBoolean && myState==StateAC.WAIT_FOR_STATE_RES){
-            	  TransitionMsg header = terminationRule(myState, stateReqList);
-            	  currentAction.setMessageHeader(header.toString());
-            	  for(int j : upSet){
-            		  if(j!=coordinator)
-            			  sendMsg(j, currentAction.composeMessage());
-            	  }
-            	  stateReqList.clear();
-             }
+            	 TransitionMsg header = terminationRule(myState, stateReqList);
+           	  	 System.out.println("the decision made on collection is " + header.toString());
+           	  	 currentAction.setMessageHeader(header.toString());
+           	  	 for(int j : upSet){
+           	  		 if(j!=coordinator)
+           	  			 sendMsg(j, currentAction.composeMessage());
+           	  	 }
+           	  	 stateReqList.clear();
+           	  	 if(header == TransitionMsg.ABORT){
+           	  		 myState  = StateAC.ABORT;
+           	  		 dtLog.writeEntry(myState, currentAction.getTransaction());
+           	  	 }             
+           	 }
              
              if(!atLeastOneBoolean)
             	 System.out.println("Time out action for coordinator");
@@ -578,6 +583,7 @@ public class Node {
               long smallTimeout = getTimeOut()/10;
               boolean atleastone = false;
               int num_of_election_message = 0;
+              boolean changeRole = false;
               while(System.currentTimeMillis() < startTime) {
                   Thread.sleep(smallTimeout);
                   messages = (nc.getReceivedMsgs());
@@ -585,24 +591,31 @@ public class Node {
                   for(String m :messages) {
                 	   
                 	   currentAction = new MessageParser(m);
-                	   
-                	   if(!currentAction.getMessageHeader().equals( TransitionMsg.UR_ELECTED.toString())){
-                		   processReceivedMsgAsParticipant(m);
-                	   }
-                	   else{
+                	  
+                	   if(currentAction.getMessageHeader().toString().equals( TransitionMsg.UR_ELECTED.toString())){
                 		   System.out.println("I am "+ myID+ " and I receive election message");
                 		   // What you receive is UR_ELECTED message
                 		   // You should not process more than once
                 		   if(num_of_election_message==0){
                 			   num_of_election_message++;
                 			   processReceivedMsgAsParticipant(m);
+                			   changeRole = true;
                 		   }
+                	   }
+                	   else{
+                		   //System.out.println("Receive message :  "+ messages);
+                		   processReceivedMsgAsParticipant(m);
+                		  
                 	   }
                 	   atleastone = true;
                      
                   }
               }
+              
+              if(changeRole) break;
+              
               num_of_election_message = 0;
+              
               if(!atleastone)
             	      System.out.println("Participant time out");
               
@@ -622,9 +635,7 @@ public class Node {
             	      int newCoor = electionProtocol(currentAction);
             	      
             	      //System.out.println("I am " + myID + " new coordinator is " + Integer.toString(newCoor));
-            	      if(newCoor == myID)
-            	    	  break;
-            	      
+            	    
               }
               
               // wait for commit message from coordinator
@@ -643,64 +654,66 @@ public class Node {
 	 * 
 	 */
 	
-	private TransitionMsg terminationRule(StateAC myState, List<MessageParser> list ) {
-		System.out.println("start termination rule");
-        TransitionMsg termination_decision = null;
-        if(list.isEmpty()) {
-           System.out.println("there is a empty set for termination rule");
-        } else {
-            int count_commitable = 0;
-            int count_uncertain = 0;
-            boolean commit_flag = false;
-            boolean abort_flag = false;
+	 private TransitionMsg terminationRule(StateAC myState, List<MessageParser> list ) {
+			
+			System.out.println("start termination rule");
+			//System.out.println("What I receive is " + list);
+	        TransitionMsg termination_decision = null;
+	        if(list.isEmpty()) {
+	           System.out.println("there is a empty set for termination rule");
+	        } else {
+	            int count_commitable = 0;
+	            int count_uncertain = 0;
+	            boolean commit_flag = false;
+	            boolean abort_flag = false;
 
-            for(MessageParser item:list) {
-            	
-            	// if some decide to abort
-                if(item.getMessageHeader().equalsIgnoreCase(StateAC.ABORT.toString())) {
-                    abort_flag = true;
-                    break;
-                } 
-                // if some decide to commit
-                else if(item.getMessageHeader().equalsIgnoreCase(StateAC.COMMIT.toString())) {
-                    commit_flag = true;
-                    break;
-                } 
-                // record the number of uncertain
-                else if(item.getMessageHeader().equalsIgnoreCase(StateAC.UNCERTAIN.toString())) {
-                    count_uncertain ++;
-                    continue;
-                } 
-                // record the number of commitable
-                else if(item.getMessageHeader().equalsIgnoreCase(StateAC.COMMITABLE.toString())) {
-                    count_commitable ++;
-                    continue;
-                }
-            }
-            
-            switch(myState) {
-                case ABORT: abort_flag = true; break;
-                case COMMIT: commit_flag = true; break;
-                case UNCERTAIN: count_uncertain ++; break;
-                case COMMITABLE: count_commitable++; break;
-            }
+	            for(MessageParser item:list) {
+	            	
+	            	System.out.println("The state is ");
+	            	// if some decide to abort
+	                if(item.getStateInfo()==StateAC.ABORT) {
+	                    abort_flag = true;
+	                    break;
+	                } 
+	                // if some decide to commit
+	                else if(item.getStateInfo()==StateAC.COMMIT) {
+	                    commit_flag = true;
+	                    break;
+	                } 
+	                // record the number of uncertain
+	                else if(item.getStateInfo()==StateAC.UNCERTAIN) {
+	                    count_uncertain ++;
+	                    continue;
+	                } 
+	                // record the number of commitable
+	                else if(item.getStateInfo() == StateAC.COMMITABLE) {
+	                    count_commitable ++;
+	                    continue;
+	                }
+	            }
+	            
+	            switch(myState) {
+	                case ABORT: abort_flag = true; break;
+	                case COMMIT: commit_flag = true; break;
+	                case UNCERTAIN: count_uncertain ++; break;
+	                case COMMITABLE: count_commitable++; break;
+	            }
 
-            if(abort_flag) {
-                termination_decision = TransitionMsg.ABORT;
-            } else if(commit_flag) {
-                termination_decision = TransitionMsg.COMMIT;
-            } else if(count_uncertain == list.size() + 1) {
-                termination_decision = TransitionMsg.ABORT;
-            } else if(count_commitable > 0) {
-                termination_decision = TransitionMsg.PRECOMMIT;
-            }
-           
-        }
+	            if(abort_flag) {
+	                termination_decision = TransitionMsg.ABORT;
+	            } else if(commit_flag) {
+	                termination_decision = TransitionMsg.COMMIT;
+	            } else if(count_uncertain == list.size() ) {
+	                termination_decision = TransitionMsg.ABORT;
+	            } else if(count_commitable > 0) {
+	                termination_decision = TransitionMsg.PRECOMMIT;
+	            }
+	           
+	        }
 
 
-        return termination_decision;
-    }
-	
+	        return termination_decision;
+	    }
 	/*
 	 * 
 	 * Election Protocal
@@ -738,17 +751,18 @@ public class Node {
 	 *  As participant, sent out the state
 	 * 
 	 */
-	private void sendParticipantState(StateAC state, MessageParser stResponse){
+	 private void sendParticipantState(StateAC state, MessageParser stResponse){
 
-        String senderProcNum = stResponse.getSource();
-        stResponse.setSource(String.valueOf(config.procNum));
-        stResponse.setMessageHeader(TransitionMsg.STATE_RES.toString());
-        String stateResponse = stResponse.composeMessage();
+	        String senderProcNum = stResponse.getSource();
+	        stResponse.setSource(String.valueOf(config.procNum));
+	        stResponse.setMessageHeader(TransitionMsg.STATE_RES.toString());
+	        stResponse.setStateInfo(myState);
+	        String stateResponse = stResponse.composeMessage();
 
-        sendMsg(Integer.valueOf(senderProcNum), stateResponse);
-        
-        return;
-    }
+	        sendMsg(Integer.valueOf(senderProcNum), stateResponse);
+	        
+	        return;
+	    }
 	
 	
 	/*
@@ -757,19 +771,19 @@ public class Node {
 	 * 
 	 */
 	
-	 private void sendStateReq(MessageParser pmrequest) {
-	        pmrequest.setMessageHeader(TransitionMsg.STATE_REQ.toString());
-	        pmrequest.setSource(String.valueOf(config.procNum));
-	        String request = pmrequest.composeWithUpset();
-	        
-	        //TODO Change if liveSet of processes in implemented
-	        for(Integer i: upSet) {
-	            if(config.procNum == i.intValue())
-	                continue;
-	            System.out.println("I am send state request " + Integer.toString(i) );
-	            nc.sendMsg(i.intValue(), request);
-	        }
-	 }
+	  private void sendStateReq(MessageParser pmrequest) {
+        pmrequest.setMessageHeader(TransitionMsg.STATE_REQ.toString());
+        pmrequest.setSource(String.valueOf(config.procNum));
+        String request = pmrequest.composeWithUpset();
+        
+        //TODO Change if liveSet of processes in implemented
+        for(Integer i: upSet) {
+            if(config.procNum == i.intValue())
+                continue;
+            System.out.println("I am send state request " + Integer.toString(i) );
+            sendMsg(i.intValue(), request);
+        }
+ }
 	 
 	 /*
 	  * 

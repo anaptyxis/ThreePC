@@ -1,5 +1,4 @@
 package ut.distcomp.framework;
-import java.util.Arrays;
 import java.util.HashSet;
 /**
  * Created by zhangtian on 10/2/15.
@@ -13,6 +12,7 @@ public class MessageParser {
     private String song;
     private String url;
     private String messageHeader;
+    private String stateinfo;
     private HashSet<Integer> upSet;
 
 
@@ -28,9 +28,9 @@ public class MessageParser {
         String result;
 
         if(instruction.equalsIgnoreCase("edit")) {
-            result = source + DELIMITER + instruction + DELIMITER + old_song + DELIMITER1 + song + DELIMITER + url + DELIMITER + messageHeader;
+            result = source + DELIMITER + instruction + DELIMITER + old_song + DELIMITER1 + song + DELIMITER + url + DELIMITER+ stateinfo+ DELIMITER + messageHeader;
         } else {
-            result = source + DELIMITER + instruction + DELIMITER + song + DELIMITER + url + DELIMITER + messageHeader;
+            result = source + DELIMITER + instruction + DELIMITER + song + DELIMITER + url + DELIMITER + stateinfo + DELIMITER +messageHeader;
         }
 
         return result;
@@ -40,6 +40,7 @@ public class MessageParser {
         String[] split_input = input.split(DELIMITER);
         source = split_input[0];
         instruction = split_input[1];
+        stateinfo = split_input[4];
 
         if(instruction.equalsIgnoreCase("edit")) {
             String[] editSong = split_input[2].split(DELIMITER1);
@@ -52,15 +53,15 @@ public class MessageParser {
             song = split_input[2];
             url = split_input[3];
         }
-        if(split_input.length < 5) {
+        if(split_input.length < 6) {
             messageHeader="";
         } else {
-            messageHeader = split_input[4];
+            messageHeader = split_input[5];
         }
-        if(split_input.length < 6) {
+        if(split_input.length < 7) {
             upSet = new HashSet<Integer>();
         } else {
-            initHashSet(split_input[5]);
+            initHashSet(split_input[6]);
         }
 
     }
@@ -77,6 +78,43 @@ public class MessageParser {
             upSet.add(Integer.valueOf(Integer.parseInt(item)));
         }
     }
+    /*
+     *      IDLE,
+		    START_3PC,
+		    WAIT_FOR_VOTE_REQ,
+		    WAIT_FOR_VOTE_DEC,
+		    WAIT_FOR_ACKS,
+		    WAIT_FOR_STATE_RES,
+		    UNCERTAIN,
+		    COMMITABLE,
+		    COMMIT,
+		    ABORT;
+     * 
+     */
+    public StateAC getStateInfo() {
+		if(stateinfo.equals(StateAC.IDLE.toString() ))
+			return StateAC.IDLE;
+		if(stateinfo.equals(StateAC.START_3PC.toString() ))
+			return StateAC.START_3PC;
+		if(stateinfo.equals(StateAC.WAIT_FOR_VOTE_REQ.toString() ))
+			return StateAC.WAIT_FOR_VOTE_REQ;
+		if(stateinfo.equals(StateAC.WAIT_FOR_VOTE_DEC.toString() ))
+			return StateAC.WAIT_FOR_VOTE_DEC;
+		if(stateinfo.equals(StateAC.WAIT_FOR_ACKS.toString() ))
+			return StateAC.WAIT_FOR_ACKS;
+		if(stateinfo.equals(StateAC.WAIT_FOR_STATE_RES.toString() ))
+			return StateAC.WAIT_FOR_STATE_RES;
+		if(stateinfo.equals(StateAC.UNCERTAIN.toString() ))
+			return StateAC.UNCERTAIN;
+		if(stateinfo.equals(StateAC.COMMITABLE.toString() ))
+			return StateAC.COMMITABLE;
+		if(stateinfo.equals(StateAC.COMMIT.toString() ))
+			return StateAC.COMMIT;
+		if(stateinfo.equals(StateAC.ABORT.toString() ))
+			return StateAC.ABORT;
+			
+	    return null;
+	}
     
 
     public String composeWithUpset() {
@@ -84,9 +122,9 @@ public class MessageParser {
 
         if(instruction.equalsIgnoreCase("edit")) {
             result = source + DELIMITER + instruction + DELIMITER + old_song + DELIMITER1 + song + DELIMITER +
-                        url + DELIMITER + messageHeader + DELIMITER + upSet.toString();
+                        url + DELIMITER + stateinfo+ DELIMITER  + messageHeader + DELIMITER + upSet.toString();
         } else {
-            result = source + DELIMITER + instruction + DELIMITER + song + DELIMITER + url + DELIMITER +
+            result = source + DELIMITER + instruction + DELIMITER + song + DELIMITER + url + DELIMITER + stateinfo + DELIMITER +
                         messageHeader + DELIMITER + upSet.toString();
         }
 
@@ -120,6 +158,9 @@ public class MessageParser {
         this.messageHeader = messageHeader;
     }
 
+    public void setStateInfo(StateAC state) {
+		this.stateinfo = state.toString();
+	}
     public String getSource(){
         return source;
     }

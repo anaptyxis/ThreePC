@@ -1,5 +1,3 @@
-idle;2015-10-07 17:26:32.516;UPset: [0, 1, 2, 3, 4];
-start;2015-10-07 17:26:33.718;;add;test;http://www.google.com;;
-wait_for_vote_dec;2015-10-07 17:26:33.726;;add;test;http://www.google.com;;
-wait_for_acks;2015-10-07 17:26:33.928;;add;test;http://www.google.com;;
-commit;2015-10-07 17:26:34.336;;add;test;http://www.google.com;;
+idle;2015-10-07 21:51:18.74;UPset: [0, 1, 2, 3, 4];
+start;2015-10-07 21:51:20.748;;add;SongA;http://SongA.mysongs.com/;;
+wait_for_vote_dec;2015-10-07 21:51:20.758;;add;SongA;http://SongA.mysongs.com/;;
