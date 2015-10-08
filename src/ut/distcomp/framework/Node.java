@@ -34,6 +34,7 @@ public class Node {
     private ArrayList<MessageParser> ActionList = new ArrayList<MessageParser>();
 	private MessageParser currentAction = null;
 	private int msgCount;
+	private int msgBound;
 	
 	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
@@ -57,6 +58,7 @@ public class Node {
 */		running = true;
 		this.revival = revival;
 		msgCount = 0;
+		msgBound = Integer.MAX_VALUE;		//start with no bound on msgCount
         viewNumber = config.numProcesses;
         currentAction = new MessageParser();
 		myID = getID();
@@ -924,7 +926,7 @@ public class Node {
             System.out.println("I am send state request " + Integer.toString(i) );
             sendMsg(i.intValue(), request);
         }
- }
+	  }
 	 
 	 /*
 	  * 
@@ -932,8 +934,18 @@ public class Node {
 	  * 
 	  */
 
+	  public void setMsgBound(int numMsgs) {		  
+		  msgBound = msgCount + numMsgs;
+	  }
+	  
+	  public void rmMsgBound() {		  
+		  msgBound = Integer.MAX_VALUE;
+	  }
+	  
 	  public void sendMsg(int procID, String msg) {
-			this.nc.sendMsg(procID, msg);
+		  	while(msgCount >= msgBound);			//no messages sent until 
+			this.nc.sendMsg(procID, msg);			//bound adjusted
+			msgCount++;
 	  }
 		
 	  public List<String> retrieveMsgs() {
