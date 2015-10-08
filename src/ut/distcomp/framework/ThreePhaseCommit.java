@@ -224,34 +224,56 @@ public class ThreePhaseCommit {
 
 	public void partialMessage(int procID, int numMsgs) {
 		
-		//TODO
 		try {
-			System.out.println("??");
+			System.out.println("3PC: Sending partialMessage "+numMsgs+" to p"+procID);
 			procOutList.get(procID).write("partialMessage "+numMsgs);
-			procOutList.get(0).flush();
+			procOutList.get(procID).flush();
 		} catch (IOException e) {
-			System.err.println("3PC: Error writing 'partialMessage' "+numMsgs+" to process p");
+			System.err.println("3PC: Error writing 'partialMessage' "+numMsgs+" to process p"+procID);
 			e.printStackTrace();
 		}
-
 		
 	}
 	
 	public void resumeMessages(int procID) {
 		
-		//TODO
+		try {
+			System.out.println("3PC: Sending resumeMessages to p"+procID);
+			procOutList.get(procID).write("resumeMessages");
+			procOutList.get(procID).flush();
+		} catch (IOException e) {
+			System.err.println("3PC: Error writing 'resumeMessages' to process p"+procID);
+			e.printStackTrace();
+		}
 		
 	}
 	
 	public void allClear() {
 		
-		//TODO
+		for (int i = 0; i < procList.size(); i++) {
+			if (procList.get(i) != null)
+				try {
+					System.out.println("3PC: Sending allClear to p"+i);
+					procOutList.get(i).write("allClear");
+					procOutList.get(i).flush();
+				} catch (IOException e) {
+					System.err.println("3PC: Error writing 'allClear' to process p"+i);
+					e.printStackTrace();
+				}
+		}
 		
 	}
 
 	public void rejectNextChange(int procID) {
 		 
-		//TODO
+		try {
+			System.out.println("3PC: Sending rejectNextChanse to p"+procID);
+			procOutList.get(procID).write("rejectNextChange");
+			procOutList.get(procID).flush();
+		} catch (IOException e) {
+			System.err.println("3PC: Error writing 'rejectNextChange' to process p"+procID);
+			e.printStackTrace();
+		}
 
 	}
 

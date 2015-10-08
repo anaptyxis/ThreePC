@@ -581,6 +581,25 @@ public class Node {
 		}
 	}
 	
+	/*
+	 *   Check and handle any controller directives
+	 */
+	private void checkForControllerDirectives() {
+		 
+		 if (inputFromController.hasNextLine()) { 
+			String incoming = inputFromController.nextLine();
+			String[] strArr = incoming.split(" ");
+			if (strArr[0].equals("partialMessage"))
+				setMsgBound(Integer.parseInt(strArr[1]));
+			if (strArr[0].equals("resumeMessages"))
+				setMsgBound(Integer.MAX_VALUE);
+			//if (strArr[0].equals("allClear"))
+				//stuff
+			//if (strArr[0].equals("rejectNextChange"))
+				//stuff
+		 }
+		
+	}
 	
 	/*
 	 * Get message using polling when there is no failure
@@ -590,13 +609,7 @@ public class Node {
 		 while(true){
 			 
 			 //first check to see if any incoming messages from controller
-			 if (inputFromController.hasNextLine()) { 
-				String incoming = inputFromController.nextLine();
-				String[] strArr = incoming.split(" ");
-				if (strArr[0].equals("partialMessage"))
-					setMsgBound(Integer.parseInt(strArr[1]));					
-			 }
-
+			 checkForControllerDirectives();
 			 
              List<String> messages = null;
              ArrayList<MessageParser> stateReqList = new ArrayList<MessageParser>();
@@ -734,13 +747,8 @@ public class Node {
 		 
           while(true){
 
- 			 //first check to see if any incoming messages from controller
- 			 if (inputFromController.hasNextLine()) { 
- 				String incoming = inputFromController.nextLine();
- 				String[] strArr = incoming.split(" ");
- 				if (strArr[0].equals("partialMessage"))
- 					setMsgBound(Integer.parseInt(strArr[1]));					
- 			 }       
+  			 //first check to see if any incoming messages from controller
+  			 checkForControllerDirectives();
         	  
         	  List<String> messages ;
               long startTime = (System.currentTimeMillis()+getTimeOut());
