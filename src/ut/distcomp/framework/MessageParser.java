@@ -170,6 +170,8 @@ public class MessageParser {
     public String getSong(){
         return song;
     }
+    
+    
 
     public String getOldSong() {
         return old_song;
@@ -180,4 +182,20 @@ public class MessageParser {
     public String getMessageHeader(){
         return messageHeader;
     }
+    
+    /*
+     *  Set song URL and action 
+     */
+    
+    public void setAction(String act) {
+		this.instruction = act;
+   	}
+    
+    public void setSong(String songName) {
+		this.song = songName;
+   	}
+    
+    public void setURl(String urlString) {
+    	this.url = urlString;
+	}
 }
