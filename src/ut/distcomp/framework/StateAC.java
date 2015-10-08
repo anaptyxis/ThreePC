@@ -15,7 +15,8 @@ public enum StateAC {
     UNCERTAIN,
     COMMITABLE,
     COMMIT,
-    ABORT;
+    ABORT,
+    WAIT_FOR_RECOVER_REP;
 
 
     private String string;
@@ -33,6 +34,7 @@ public enum StateAC {
         COMMITABLE.string = "commitable";
         COMMIT.string="commit";
         ABORT.string="abort";
+        WAIT_FOR_RECOVER_REP.string = "wait_for_recover_rep";
     }
 
     public String toString() {

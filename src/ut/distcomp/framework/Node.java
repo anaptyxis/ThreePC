@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Queue;
 import java.util.Scanner;
 
 
@@ -42,7 +43,10 @@ public class Node {
 	private ArrayList<MessageParser> oldDecisionList = new ArrayList<MessageParser>();
 	private Recovery recover = null;
 	private boolean pending = false;
-	
+	private Queue<MessageParser> QueuedMessageList;
+	private boolean coordinatorWorking = true;
+	private boolean TotalFailure = false;
+	private ArrayList<HashSet<Integer>> recoveryUpSets = null;
 	
 	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
@@ -102,6 +106,7 @@ public class Node {
 			upSet = recover.getUpSet();
 			myState = recover.getLastState();
 			pending = recover.getPendingInfo();
+			recoveryUpSets = new ArrayList<HashSet<Integer>>();
 			//====DEBUG=========
 			System.out.println("last state is "+recover.getLastState().toString()+
           "  I am need to ask others is " + recover.DoAskOthers() +" and the upset is  "
@@ -127,13 +132,18 @@ public class Node {
   private void askOtherForHelp(MessageParser parser){
       parser.setMessageHeader(TransitionMsg.RECOVER_REQ.toString());
       parser.setSource(Integer.toString(myID));
+      
+      // send everyone who is alive, just in my opnion
       for (int m : upSet){
         if(m!=myID){
-          sendMsg(m, parser.composeMessage());
+          sendMsg(m, parser.composeWithUpset());
           //System.out.println("What I print is" + parser.composeMessage());
         }
       }
-      
+      myState = StateAC.WAIT_FOR_RECOVER_REP;
+      dtLog.writeEntry(myState, parser.getTransaction());
+      //reconstruct the UP set
+     
   }
 	
 	/*
@@ -528,8 +538,6 @@ public class Node {
         //  Receive pre-commit message
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.PRECOMMIT.toString())){
-                // log the message
-
                 // send the message
                 parser.setMessageHeader(TransitionMsg.ACK.toString());
                 parser.setSource(Integer.toString(myID));
@@ -543,7 +551,7 @@ public class Node {
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.COMMIT.toString())){
         		
              	playListFollowAction(parser);
-              oldDecisionList.add(parser);
+                oldDecisionList.add(parser);
         }
 
         //  Receive Abort message
@@ -557,18 +565,36 @@ public class Node {
         //Receive state request
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.STATE_REQ.toString())){
-        	   System.out.println("Receive State Request"); 
-        	   //set the new UP set
-        	   upSet = parser.getUpSet();
-        	   // send participant state
-        	   sendParticipantState(myState, parser);
+        	  //if coordinator is not working 
+        	  if(!coordinatorWorking){
+        	      System.out.println("Receive State Request"); 
+        	      
+        	      //set the new UP set
+        	      upSet = parser.getUpSet();
+        	      // send participant state
+        	      sendParticipantState(myState, parser);
+        	      // sey coordinator working to true
+        	   	  coordinatorWorking=true;
+        	   }
+        	   // the coordinator is still working
+        	   else{
+        		   coordinator = Integer.parseInt(parser.getSource());
+        		   for(int j : upSet){
+        			   if(j<coordinator)
+        				   upSet.remove(j);
+        		   }
+        	   }
         }
         
         //Receive recover request
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REQ.toString())){
-        	 for(MessageParser msgParser : oldDecisionList){
+        	boolean ableToResponse = false; 
+        	
+        	
+        	for(MessageParser msgParser : oldDecisionList){
                if(isSameAction(parser, msgParser)){
+            	 ableToResponse = true;
                  int j = Integer.parseInt(parser.getSource());
                  parser.setMessageHeader(TransitionMsg.RECOVER_REP.toString());
                  parser.setStateInfo(StateAC.COMMIT);
@@ -577,13 +603,28 @@ public class Node {
                  System.out.println("I am helping others to revive"); 
                }
             }
+        	
+        	// Not able to response
+        	if(!ableToResponse){
+        		
+        	}
         }
 
          //Receive recover response
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REP.toString())){
-          // get the decision only when there is pending info
-          if(pending){    
+          // get the decision only when there is pending info and no total failure happens
+            
+          //Before make decision, first to make sure I am the last process to fail
+         boolean lastProces = false;
+         recoveryUpSets.add(parser.getUpSet());
+         
+         for (){
+        	 
+         }
+         
+                 
+         if(pending && lastProces){    
              if(parser.getStateInfo()==StateAC.COMMIT){
                  upSet = parser.getUpSet();
                  myState = StateAC.COMMIT;
@@ -592,6 +633,7 @@ public class Node {
                  pending = false;
                  System.out.println("My pending decision is resolved");
               } 
+            recoveryUpSets.clear();
           }
           
         }
@@ -600,19 +642,20 @@ public class Node {
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.UR_ELECTED.toString())){
         	    System.out.println("Hahaha I am "+ Integer.toString(myID) + "new leader");
+        	    coordinatorWorking = true;
         	    //I am new Coordinator
         	    if(myID != coordinator) 
         	    	System.out.println("Seems something wrong happens, sinces I am not the coordinator");
         	    // update the UP set
         	    upSet = parser.getUpSet();
-        	    System.out.println("my new UP set is " + upSet);
+        	    //System.out.println("my new UP set is " + upSet);
         	    //Send out the State_REQ
         	    sendStateReq(parser);
         	    
         	    // change my state and DT log that
         	    
         	    myState = StateAC.WAIT_FOR_STATE_RES;
-        	    dtLog.writeEntry(myState, parser.getTransaction());
+        	    dtLog.writeEntry(myState, parser.getTransaction()+";"+ "UPset = " + upSet);
         	    //And now I am new Coordinator
         	    getMessageAsCoordinator();
         }
@@ -889,6 +932,7 @@ public class Node {
               // wait for VOTE request from coordinator
               if(!atleastone && myState == StateAC.IDLE){
             	  	  System.out.println("Participant wait for Coordinator's Vote Request");
+            	  	  coordinatorWorking = false;
             	      myState = StateAC.ABORT;
             	      dtLog.writeEntry(myState, "wait for vote request");
               }
@@ -896,6 +940,7 @@ public class Node {
               // wait for Precommit message from coordinator
               if(!atleastone && myState==StateAC.UNCERTAIN){
             	      System.out.println("Participant wait for Coordinator's Precommit");
+            	      coordinatorWorking=false;
             	      //remove coordinator in UP set
             	      upSet.remove(coordinator);
             	      //run election protocol  and send state request
@@ -908,9 +953,23 @@ public class Node {
               // wait for commit message from coordinator
               if(!atleastone && myState==StateAC.COMMITABLE){
             	  	  System.out.println("Participant wait for Coordinator's Commit");
+            	  	  coordinatorWorking=false;
             	  	  upSet.remove(coordinator);
             	  	  //run election protocol  and send state request
             	  	  int newCoor = electionProtocol(currentAction);
+              }
+              
+              
+             // wait for recovery response from others
+             // if there is no response until timeout, then total failure is happend
+              if(!atleastone && myState==StateAC.WAIT_FOR_RECOVER_REP){
+            	  	  System.out.println("Seems total failure happens");
+            	  	  TotalFailure = true;
+            	  	  coordinatorWorking=false;
+            	  	  upSet.clear();
+            	  	  upSet.add(myID);
+            	  	  
+            	  	  
               }
              
            }
@@ -1014,6 +1073,7 @@ public class Node {
 		 pmRequest.setMessageHeader(TransitionMsg.UR_ELECTED.toString());
          String stRequest = pmRequest.composeWithUpset();
          sendMsg(destProcNum, stRequest);
+         
      }
 	
 	/*
