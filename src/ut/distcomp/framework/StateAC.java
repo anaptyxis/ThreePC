@@ -10,6 +10,8 @@ public enum StateAC {
     WAIT_FOR_VOTE_DEC,
     WAIT_FOR_ACKS,
     WAIT_FOR_STATE_RES,
+    DECIDE_YES,
+    DECIDE_NO,
     UNCERTAIN,
     COMMITABLE,
     COMMIT,
@@ -25,6 +27,8 @@ public enum StateAC {
         WAIT_FOR_VOTE_DEC.string="wait_for_vote_dec";
         WAIT_FOR_STATE_RES.string = "wait_for_state_res";
         WAIT_FOR_ACKS.string ="wait_for_acks";
+        DECIDE_YES.string = "decision_yes";
+        DECIDE_NO.string = "decision_no";
         UNCERTAIN.string = "uncertain";
         COMMITABLE.string = "commitable";
         COMMIT.string="commit";
