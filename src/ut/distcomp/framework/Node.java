@@ -235,11 +235,20 @@ public class Node {
         
         
         // Decide whether to send final commit message
-        Boolean readyCommit = false;
-        if(!ACKList.contains(0)) readyCommit  = true;
+        Boolean readyCommit = true;
+        for(int j : upSet){
+        	
+        	if(j == coordinator)
+        		continue;
+        	if(ACKList.get(j) != 0)
+        		continue;
+        	else
+        		readyCommit  = false;
+        }
+       System.out.println("The Up set is "+ upSet);
         if(readyCommit){
         	parser.setMessageHeader(TransitionMsg.COMMIT.toString());
-    		for(int j = 0 ; j < viewNumber ; j++){
+    		for(int j : upSet){
     			if(j != coordinator ){
     				sendMsg(j, parser.composeMessage());
     			}
@@ -398,6 +407,7 @@ public class Node {
         //Receive commit message
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.COMMIT.toString())){
+        		
              	playListFollowAction(parser);
         }
 
@@ -524,20 +534,74 @@ public class Node {
              if(atLeastOneBoolean && myState==StateAC.WAIT_FOR_STATE_RES){
             	 TransitionMsg header = terminationRule(myState, stateReqList);
            	  	 System.out.println("the decision made on collection is " + header.toString());
-           	  	 currentAction.setMessageHeader(header.toString());
-           	  	 for(int j : upSet){
-           	  		 if(j!=coordinator)
-           	  			 sendMsg(j, currentAction.composeMessage());
-           	  	 }
-           	  	 stateReqList.clear();
+           	  	 MessageParser actionMessageParser = new MessageParser();
+           	  	 actionMessageParser =stateReqList.get(1);
+           	  		 	
+           	  	actionMessageParser.setMessageHeader(header.toString());
+           	  	 
+           	  	 // if decision is Abort
            	  	 if(header == TransitionMsg.ABORT){
+           	  		
+           	  		 for(MessageParser tmp : stateReqList){
+           	  			 int j = Integer.parseInt(tmp.getSource());
+           	  			 	sendMsg(j, currentAction.composeMessage());
+           	  		 }
+           	  		 
            	  		 myState  = StateAC.ABORT;
-           	  		 dtLog.writeEntry(myState, currentAction.getTransaction());
-           	  	 }             
+           	  		 dtLog.writeEntry(myState, actionMessageParser.getTransaction());
+           	  	 }   
+           	  	
+           	  	 // if the decision is Commit 
+           	    if(header == TransitionMsg.COMMIT){
+        	  		 
+        	  		 for(MessageParser tmp : stateReqList){
+         	  			 int j = Integer.parseInt(tmp.getSource());
+         	  				 sendMsg(j, actionMessageParser.composeMessage());
+         	  		 }
+        	  		 
+        	  		myState  = StateAC.COMMIT;
+        	  		dtLog.writeEntry(myState, actionMessageParser.getTransaction());
+        	  	 }   
+           	    
+           	    // if the decision is Precommit
+           	   if(header == TransitionMsg.PRECOMMIT){
+           		   boolean isUncertain = false;
+           		   
+           		   // Sent every uncertain case a Precommit info
+           		   for(MessageParser tmp : stateReqList){
+      	  			 if(tmp.getStateInfo() == StateAC.UNCERTAIN ){
+      	  				 int j = Integer.parseInt(tmp.getSource());
+      	  				 sendMsg(j, actionMessageParser.composeMessage());
+      	  				 System.out.println("Re issue precommit"+ actionMessageParser.composeMessage());
+      	  				 isUncertain = true;
+      	  			 }
+           		   }
+      	  		 
+      	  		  // Corner case, if everyone is commitable, send commit
+      	  		  if(!isUncertain){
+      	  			 actionMessageParser.setMessageHeader(TransitionMsg.COMMIT.toString());
+      	  			 for(MessageParser tmp : stateReqList){
+      	  				 if(tmp.getStateInfo() == StateAC.COMMITABLE ){
+      	  				 	int j = Integer.parseInt(tmp.getSource());
+      	  				 	sendMsg(j, actionMessageParser.composeMessage());      	  		
+      	  				 }
+      	  			 }
+      	  			 myState  = StateAC.COMMIT;
+    	  			 dtLog.writeEntry(myState, actionMessageParser.getTransaction());
+
+      	  		  }else{
+      	  			 myState  = StateAC.WAIT_FOR_ACKS;
+      	  			 dtLog.writeEntry(myState, actionMessageParser.getTransaction());
+      	  			 System.out.println("Send out precommit");
+      	  		 }
+      	  	   }   
+           	    
+           	    
+           	  stateReqList.clear();
+           	  	
+           	  continue;
            	 }
-             
-             if(!atLeastOneBoolean)
-            	 System.out.println("Time out action for coordinator");
+            
              
              // There is no vote decision coming
              if(!atLeastOneBoolean && myState==StateAC.WAIT_FOR_VOTE_DEC){
@@ -593,7 +657,7 @@ public class Node {
                 	   currentAction = new MessageParser(m);
                 	  
                 	   if(currentAction.getMessageHeader().toString().equals( TransitionMsg.UR_ELECTED.toString())){
-                		   System.out.println("I am "+ myID+ " and I receive election message");
+                		   //System.out.println("I am "+ myID+ " and I receive election message");
                 		   // What you receive is UR_ELECTED message
                 		   // You should not process more than once
                 		   if(num_of_election_message==0){
@@ -603,7 +667,7 @@ public class Node {
                 		   }
                 	   }
                 	   else{
-                		   //System.out.println("Receive message :  "+ messages);
+                		   System.out.println("Receive message :  "+ messages);
                 		   processReceivedMsgAsParticipant(m);
                 		  
                 	   }
@@ -616,8 +680,6 @@ public class Node {
               
               num_of_election_message = 0;
               
-              if(!atleastone)
-            	      System.out.println("Participant time out");
               
               // wait for VOTE request from coordinator
               if(!atleastone && myState == StateAC.IDLE){
@@ -641,6 +703,9 @@ public class Node {
               // wait for commit message from coordinator
               if(!atleastone && myState==StateAC.COMMITABLE){
             	  	  System.out.println("Participant wait for Coordinator's Commit");
+            	  	  upSet.remove(coordinator);
+            	  	  //run election protocol  and send state request
+            	  	  int newCoor = electionProtocol(currentAction);
               }
              
            }
@@ -669,7 +734,7 @@ public class Node {
 
 	            for(MessageParser item:list) {
 	            	
-	            	System.out.println("The state is ");
+	            	//System.out.println("The state is ");
 	            	// if some decide to abort
 	                if(item.getStateInfo()==StateAC.ABORT) {
 	                    abort_flag = true;
