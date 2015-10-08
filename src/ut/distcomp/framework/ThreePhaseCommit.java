@@ -1,10 +1,13 @@
 package ut.distcomp.framework;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 
 /**
@@ -16,9 +19,11 @@ public class ThreePhaseCommit {
 
 	private int numProcs;
 	private ArrayList<Process> procList;
+	private ArrayList<BufferedWriter> procOutList;
 	private int coordinatorID;
 	private int lastKilledID;
 	private ArrayList<String> script;
+	
 	
 	public static void main(String[] args) {
 	
@@ -37,7 +42,8 @@ public class ThreePhaseCommit {
 	
 	public ThreePhaseCommit() {
 		numProcs = 0;
-		procList = new ArrayList<Process>();		
+		procList = new ArrayList<Process>();	
+		procOutList = new ArrayList<BufferedWriter>();	
 		script = new ArrayList<String>();
 		coordinatorID = 0;
 		
@@ -128,8 +134,7 @@ public class ThreePhaseCommit {
 					System.err.println("Error putting thread to sleep.");
 					e.printStackTrace();
 				}											
-			}
-
+			}		
 		}
 		System.out.println("======");
 	}
@@ -141,9 +146,12 @@ public class ThreePhaseCommit {
 		for (int i = 0; i < numProcs; i++) {
 			System.out.println("3PC Controller: Starting process p"+i);
 			ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+i+".txt","DTLog"+i+".txt", "new");
-			pb.inheritIO();
+			pb.redirectOutput(Redirect.INHERIT);
+			pb.redirectError(Redirect.INHERIT);		
 			try {
-				procList.add(pb.start());
+				Process proc = pb.start();
+				procOutList.add(new BufferedWriter(new OutputStreamWriter(proc.getOutputStream())));
+				procList.add(proc);
 			} catch (IOException e) {
 				System.err.println("Trouble starting process p"+i);
 				e.printStackTrace();
@@ -185,7 +193,9 @@ public class ThreePhaseCommit {
 		String classpath = System.getProperty("java.class.path");
 		System.out.println("3PC Controller: Reviving process p"+procID);
 		ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+procID+".txt","DTLog"+procID+".txt", "revive");
-		pb.inheritIO();
+		//TODO: pb.redirectInput();
+		pb.redirectOutput(Redirect.INHERIT);
+		pb.redirectError(Redirect.INHERIT);
 		try {
 			procList.set(procID,pb.start());
 		} catch (IOException e) {
@@ -214,25 +224,56 @@ public class ThreePhaseCommit {
 
 	public void partialMessage(int procID, int numMsgs) {
 		
-		//TODO
+		try {
+			System.out.println("3PC: Sending partialMessage "+numMsgs+" to p"+procID);
+			procOutList.get(procID).write("partialMessage "+numMsgs);
+			procOutList.get(procID).flush();
+		} catch (IOException e) {
+			System.err.println("3PC: Error writing 'partialMessage' "+numMsgs+" to process p"+procID);
+			e.printStackTrace();
+		}
 		
 	}
 	
 	public void resumeMessages(int procID) {
 		
-		//TODO
+		try {
+			System.out.println("3PC: Sending resumeMessages to p"+procID);
+			procOutList.get(procID).write("resumeMessages");
+			procOutList.get(procID).flush();
+		} catch (IOException e) {
+			System.err.println("3PC: Error writing 'resumeMessages' to process p"+procID);
+			e.printStackTrace();
+		}
 		
 	}
 	
 	public void allClear() {
 		
-		//TODO
+		for (int i = 0; i < procList.size(); i++) {
+			if (procList.get(i) != null)
+				try {
+					System.out.println("3PC: Sending allClear to p"+i);
+					procOutList.get(i).write("allClear");
+					procOutList.get(i).flush();
+				} catch (IOException e) {
+					System.err.println("3PC: Error writing 'allClear' to process p"+i);
+					e.printStackTrace();
+				}
+		}
 		
 	}
 
 	public void rejectNextChange(int procID) {
 		 
-		//TODO
+		try {
+			System.out.println("3PC: Sending rejectNextChanse to p"+procID);
+			procOutList.get(procID).write("rejectNextChange");
+			procOutList.get(procID).flush();
+		} catch (IOException e) {
+			System.err.println("3PC: Error writing 'rejectNextChange' to process p"+procID);
+			e.printStackTrace();
+		}
 
 	}
 
