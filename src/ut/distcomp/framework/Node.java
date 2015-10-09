@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
@@ -35,7 +36,7 @@ public class Node {
     private ArrayList<Integer> DecisionList = new ArrayList<Integer>(); //-1 NO, 0 NO DECISION, 1 YES
     private ArrayList<Integer> ACKList = new ArrayList<Integer>();
     private HashSet<Integer> upSet = new HashSet<Integer>();
-    private ArrayList<MessageParser> ActionList = new ArrayList<MessageParser>();
+    private LinkedList<MessageParser> ActionList = new LinkedList<MessageParser>();
 	private MessageParser currentAction = null;
 	private int msgCount;
 	private int msgBound;
@@ -48,6 +49,7 @@ public class Node {
 	private boolean coordinatorWorking = true;
 	private boolean TotalFailure = false;
 	private ArrayList<HashSet<Integer>> recoveryUpSets = null;
+	private LinkedList<MessageParser> messageQueue;
 	
 	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
@@ -76,6 +78,7 @@ public class Node {
 		msgCount = 0;
 		msgBound = Integer.MAX_VALUE;		//start with no bound on msgCount
 		inputFromController = new Scanner(System.in);	
+		messageQueue = new LinkedList<MessageParser>();
 		// not the revival case
 		if(!revival){
 			System.out.print("I am fresh process");
@@ -142,7 +145,7 @@ public class Node {
         }
       }
       myState = StateAC.WAIT_FOR_RECOVER_REP;
-      dtLog.writeEntry(myState, parser.getTransaction());
+      dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
       //reconstruct the UP set
      
   }
@@ -259,7 +262,32 @@ public class Node {
         	 int source = Integer.parseInt(parser.getSource());
         	 ACKList.set(source, 1);
         }
-        
+        //Receive recover request
+
+        else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REQ.toString())){
+        	boolean ableToResponse = false; 
+        	
+        	upSet.add(Integer.parseInt(parser.getSource()));
+        	for(MessageParser msgParser : oldDecisionList){
+               if(isSameAction(parser, msgParser)){
+            	 ableToResponse = true;
+                 int j = Integer.parseInt(parser.getSource());
+                 parser.setMessageHeader(TransitionMsg.RECOVER_REP.toString());
+                 parser.setStateInfo(StateAC.COMMIT);
+                 
+                 parser.setUpSet(upSet);
+                 sendMsg(j, parser.composeWithUpset());
+                 System.out.println("I am helping others to revive"); 
+               }
+            }
+        	
+        	//dtLog.writeEntry(myState, parser);
+        	
+        	// Not able to response
+        	if(!ableToResponse){
+        		
+        	}
+        }
         //wrong message
         else{
 
@@ -622,7 +650,7 @@ public class Node {
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REQ.toString())){
         	boolean ableToResponse = false; 
         	
-        	
+        	upSet.add(Integer.parseInt(parser.getSource()));
         	for(MessageParser msgParser : oldDecisionList){
                if(isSameAction(parser, msgParser)){
             	 ableToResponse = true;
@@ -635,6 +663,8 @@ public class Node {
                  System.out.println("I am helping others to revive"); 
                }
             }
+        	
+        	//dtLog.writeEntry(myState, transaction)
         	
         	// Not able to response
         	if(!ableToResponse){
@@ -651,7 +681,7 @@ public class Node {
          boolean lastProces = false;
          HashSet<Integer> unionHashSet = new HashSet<Integer>();
          if(isSubset(parser.getUpSet(),upSet))
-        	 lastProces = true;
+         lastProces = true;
          
          recoveryUpSets.add(parser.getUpSet());
          unionHashSet = parser.getUpSet();
@@ -659,7 +689,7 @@ public class Node {
          for (HashSet<Integer> m : recoveryUpSets){
         	  unionHashSet = unionOfHashSet(unionHashSet, m);
          }
-         
+         System.out.println("The union set is"+ unionHashSet);
          if(isSubset(unionHashSet, upSet))
         	 lastProces = true;
          
@@ -669,7 +699,7 @@ public class Node {
              if(parser.getStateInfo()==StateAC.COMMIT){
                  upSet = parser.getUpSet();
                  myState = StateAC.COMMIT;
-                 dtLog.writeEntry(myState, parser.getTransaction());
+                 dtLog.writeEntry(myState, parser.getTransaction()+"; UPset :"+ upSet);
                  oldDecisionList.add(parser);
                  pending = false;
                  System.out.println("My pending decision is resolved");
@@ -772,6 +802,13 @@ public class Node {
 	}
 	
 	/*
+	 *   Get the State
+	 */
+	public StateAC getState() {
+		return myState;
+	}
+	
+	/*
 	 *   Get the number of process
 	 */
 	public int getNumProcesses() {
@@ -861,7 +898,7 @@ public class Node {
 					}
                     
                	    //System.out.println("I am Here");
-                	System.out.println("tmp is " + tmp2);
+                	//System.out.println("tmp is " + tmp2);
                     if(isSubset(upSet, tmp2)){
                     	collectAllStateBoolean = true;
                     	tmp2.clear();
@@ -1000,7 +1037,10 @@ public class Node {
                 myState = StateAC.COMMIT;
                 dtLog.writeEntry(myState, currentAction.getTransaction()+";"+"UPset :" +upSet);
              }
-            
+             else if (!atLeastOneBoolean){
+            	 myState = StateAC.IDLE;
+            	 break;
+             }
              
 		 }
 	}
@@ -1068,7 +1108,7 @@ public class Node {
               }
               
               // wait for Precommit message from coordinator
-              if(!atleastone && myState==StateAC.UNCERTAIN){
+              else if(!atleastone && myState==StateAC.UNCERTAIN){
             	      System.out.println("Participant wait for Coordinator's Precommit");
             	      coordinatorWorking=false;
             	      //remove coordinator in UP set
@@ -1082,7 +1122,7 @@ public class Node {
               }
               
               // wait for commit message from coordinator
-              if(!atleastone && myState==StateAC.COMMITABLE){
+              else if(!atleastone && myState==StateAC.COMMITABLE){
             	  	  System.out.println("Participant wait for Coordinator's Commit");
             	  	  coordinatorWorking=false;
             	  	  upSet.remove(coordinator);
@@ -1094,7 +1134,7 @@ public class Node {
               
              // wait for recovery response from others
              // if there is no response until timeout, then total failure is happend
-              if(!atleastone && myState==StateAC.WAIT_FOR_RECOVER_REP){
+              else if(!atleastone && myState==StateAC.WAIT_FOR_RECOVER_REP){
             	  	  System.out.println("Seems total failure happens");
             	  	  TotalFailure = true;
             	  	  coordinatorWorking=false;
@@ -1102,6 +1142,11 @@ public class Node {
             	  	  upSet.add(myID);
             	  	  
             	  	  
+              }
+              
+              else if (!atleastone){
+             	 myState = StateAC.IDLE;
+             	 break;
               }
              
            }
@@ -1300,10 +1345,11 @@ public class Node {
 			// fresh start
 			if(n.myID==1){
 				n.readActions("ActionList.txt");
-				for (MessageParser parser : n.ActionList)
-					n.sendMsg(0,parser.composeMessage());
-					System.out.println("I want to start 3PC");
-				}
+				
+				MessageParser parser = n.ActionList.getFirst();
+				n.sendMsg(0,parser.composeMessage());
+					
+			}
 			Thread.sleep(1000);
 			if(n.myID == n.coordinator)
 				n.getMessageAsCoordinator();

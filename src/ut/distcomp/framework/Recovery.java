@@ -57,7 +57,7 @@ public class Recovery {
 						//stateList.add(StateAC.IDLE);
 					}
 					// there is a decision
-					else if(line.contains("decision")){
+				    if(line.contains("decision")){
 						 pending = true;
 						 if(line.contains("yes")){
 							 old_decision = "yes";
@@ -123,6 +123,7 @@ public class Recovery {
 		
 		public void makeDecision(){
 			System.out.println("Last state is "+ lastState.toString());
+			System.out.println("old decision is "+ old_decision);
 		    // Fails before sending Yes
 			if(old_decision.equals("yes") && lastState == StateAC.DECIDE_YES){
 				 askOthers = false;
