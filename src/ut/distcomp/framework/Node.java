@@ -493,7 +493,7 @@ public class Node {
        if (parser.getInstruction().equalsIgnoreCase("edit")){
                String song = parser.getOldSong();
                //vote yes
-               if(playList.containsKey(song)){
+               if(playList.containsKey(song) && !voteNo){
                	
                	   myState = StateAC.DECIDE_YES;
                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
@@ -510,7 +510,7 @@ public class Node {
        else if (parser.getInstruction().equalsIgnoreCase("add")){
               String song = parser.getSong();
               //vote yes
-              if(!playList.containsKey(song)){
+              if(!playList.containsKey(song) && !voteNo){
            	      myState = StateAC.DECIDE_YES;
                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                   DecisionList.set(coordinator, 1);
@@ -527,7 +527,7 @@ public class Node {
        else if (parser.getInstruction().equalsIgnoreCase("remove")){
               //vote yes
               String song = parser.getSong();
-              if(playList.containsKey(song)){
+              if(playList.containsKey(song) && !voteNo){
            	      myState = StateAC.DECIDE_YES;
                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                   DecisionList.set(coordinator, 1);
