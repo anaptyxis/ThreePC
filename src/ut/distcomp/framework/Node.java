@@ -601,6 +601,7 @@ public class Node {
         	      
         	      //set the new UP set
         	      upSet = parser.getUpSet();
+        	      parser.setUpSet(upSet);
         	      // send participant state
         	      sendParticipantState(myState, parser);
         	      // sey coordinator working to true
@@ -841,6 +842,9 @@ public class Node {
              long startTime = (System.currentTimeMillis()+getTimeOut());
              long smallTimeout = getTimeOut()/10;
              Boolean atLeastOneBoolean= false;
+             Boolean collectAllStateBoolean= false;
+             HashSet<Integer> tmp2 = new HashSet<Integer>();
+             tmp2.add(myID);
              // receive message until getTimeOut() and there is no failure
              while(System.currentTimeMillis() < startTime) {
                  Thread.sleep(smallTimeout);
@@ -848,19 +852,25 @@ public class Node {
                 
                  for(String m:messages) {
                 	currentAction = new MessageParser(m);
-                	if(currentAction.getMessageHeader().equals(TransitionMsg.STATE_RES.toString()))
+                	if(currentAction.getMessageHeader().equals(TransitionMsg.STATE_RES.toString())){
+                		tmp2.add(Integer.parseInt(currentAction.getSource()));
                 		stateReqList.add(currentAction);
+                	}
                 	else {
                 		processReceivedMsgAscoordinator(m);
 					}
                     
                	    //System.out.println("I am Here");
-                    
+                	System.out.println("tmp is " + tmp2);
+                    if(isSubset(upSet, tmp2)){
+                    	collectAllStateBoolean = true;
+                    	tmp2.clear();
+                    }
                     atLeastOneBoolean = true;
                  }
              }
              // if there is message comming, and the message is about the state response
-             if(atLeastOneBoolean && myState==StateAC.WAIT_FOR_STATE_RES){
+             if(collectAllStateBoolean && myState==StateAC.WAIT_FOR_STATE_RES){
             	 TransitionMsg header = terminationRule(myState, stateReqList);
            	  	 System.out.println("the decision made on collection is " + header.toString());
            	  	 MessageParser actionMessageParser = new MessageParser();
@@ -873,7 +883,7 @@ public class Node {
            	  		
            	  		 for(MessageParser tmp : stateReqList){
            	  			 int j = Integer.parseInt(tmp.getSource());
-           	  			 	sendMsg(j, currentAction.composeWithUpset());
+           	  			 	sendMsg(j, actionMessageParser.composeWithUpset());
            	  		 }
            	  		 
            	  		 myState  = StateAC.ABORT;
@@ -1008,7 +1018,7 @@ public class Node {
   			 //checkForControllerDirectives();
         	  
         	  List<String> messages ;
-              long startTime = (System.currentTimeMillis()+getTimeOut());
+              long startTime = (System.currentTimeMillis()+getTimeOut()*11/10);
               long smallTimeout = getTimeOut()/10;
               boolean atleastone = false;
               int num_of_election_message = 0;
