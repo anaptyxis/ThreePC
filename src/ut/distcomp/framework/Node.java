@@ -970,7 +970,7 @@ public class Node {
             	 Iterator<Integer> iterator = upSet.iterator();
            	     while (iterator.hasNext()) {
            	       Integer element = iterator.next();
-           	       if (DecisionList.get(element) == 0) {
+           	       if (ACKList.get(element) == 0) {
            	          iterator.remove();
            	       }
            	     }
@@ -1054,7 +1054,7 @@ public class Node {
             	      myState = StateAC.ABORT;
             	      // update UP set
             	      currentAction.setUpSet(upSet);
-            	      dtLog.writeEntry(myState, currentAction.getTransaction() +";"+"UPset :"+upSet);
+            	      dtLog.writeEntry(myState, "UPset :"+upSet);
               }
               
               // wait for Precommit message from coordinator
