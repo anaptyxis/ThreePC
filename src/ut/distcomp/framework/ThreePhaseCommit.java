@@ -13,6 +13,7 @@ import java.util.ArrayList;
 /**
  * ThreePhaseCommit Controller
  * @author Bradley Beth
+ * @author zhangtian
  *
  */
 public class ThreePhaseCommit {	

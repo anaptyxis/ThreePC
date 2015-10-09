@@ -22,6 +22,7 @@ import java.util.Scanner;
 /**
  * Node
  * @author Bradley Beth
+ * @author zhangtian
  *
  */
 public class Node {
@@ -53,6 +54,7 @@ public class Node {
 	private ArrayList<HashSet<Integer>> recoveryUpSets = null;
 	private LinkedList<MessageParser> messageQueue;
 	private ArrayList<String> haltedMessages;
+	private boolean voteNo;
 	
 	
 	public Node(String configName, String dtL, boolean revival) {
@@ -83,6 +85,7 @@ public class Node {
 		msgBound = Integer.MAX_VALUE;		//start with no bound on msgCount
 		inputFromController = new BufferedReader(new InputStreamReader(System.in));
 		haltedMessages = new ArrayList<String>();
+		voteNo = false;
 		messageQueue = new LinkedList<MessageParser>();
 		// not the revival case
 		if(!revival){
@@ -393,7 +396,7 @@ public class Node {
         if (parser.getInstruction().equalsIgnoreCase("edit")){
                 String song = parser.getOldSong();
                 //vote yes
-                if(playList.containsKey(song)){
+                if(playList.containsKey(song) && !voteNo){
                 	upSet = parser.getUpSet();
                 	myState = StateAC.DECIDE_YES;
                     dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
@@ -417,14 +420,14 @@ public class Node {
                     sendMsg(coordinator,parser.composeWithUpset());
                     myState = StateAC.ABORT;
                     dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
-
+                    voteNo = false;
                 }
         }
         //request for add
         else if (parser.getInstruction().equalsIgnoreCase("add")){
                String song = parser.getSong();
                //vote yes
-               if(!playList.containsKey(song)){
+               if(!playList.containsKey(song) && !voteNo){
             	   upSet = parser.getUpSet();
             	   myState = StateAC.DECIDE_YES;
                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
@@ -446,14 +449,14 @@ public class Node {
                    sendMsg(coordinator,parser.composeWithUpset());
                    myState = StateAC.ABORT;
                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
-
+                   voteNo = false;
                }
         }
         // request for delete
         else if (parser.getInstruction().equalsIgnoreCase("remove")){
                //vote yes
                String song = parser.getSong();
-               if(playList.containsKey(song)){
+               if(playList.containsKey(song) && !voteNo){
             	   upSet = parser.getUpSet();
             	   myState = StateAC.DECIDE_YES;
                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
@@ -475,6 +478,7 @@ public class Node {
                    sendMsg(coordinator,parser.composeWithUpset());
                    myState = StateAC.ABORT;
                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
+                   voteNo = false;
                }
         }
         // wrong vote request
@@ -865,8 +869,8 @@ public class Node {
 					setMsgBound(Integer.MAX_VALUE);
 				//if (strArr[0].equals("allClear"))
 					//stuff
-				//if (strArr[0].equals("rejectNextChange"))
-					//stuff
+				if (strArr[0].equals("rejectNextChange"))
+					voteNo = true;
 			 }
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
