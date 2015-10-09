@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.CookieHandler;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -47,11 +48,12 @@ public class Node {
 	private ArrayList<MessageParser> oldDecisionList = new ArrayList<MessageParser>();
 	private Recovery recover = null;
 	private boolean pending = false;
-	private Queue<MessageParser> QueuedMessageList;
 	private boolean coordinatorWorking = true;
 	private boolean TotalFailure = false;
 	private ArrayList<HashSet<Integer>> recoveryUpSets = null;
 	private LinkedList<MessageParser> messageQueue;
+	private ArrayList<String> haltedMessages;
+	
 	
 	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
@@ -79,7 +81,8 @@ public class Node {
 		currentAction = new MessageParser();
 		msgCount = 0;
 		msgBound = Integer.MAX_VALUE;		//start with no bound on msgCount
-		inputFromController = new BufferedReader(new InputStreamReader(System.in));	
+		inputFromController = new BufferedReader(new InputStreamReader(System.in));
+		haltedMessages = new ArrayList<String>();
 		messageQueue = new LinkedList<MessageParser>();
 		// not the revival case
 		if(!revival){
@@ -866,10 +869,8 @@ public class Node {
 					//stuff
 			 }
 		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -1323,11 +1324,22 @@ public class Node {
 	  }
 	  
 	  public void sendMsg(int procID, String msg) {
-		    System.out.println(myID+" msgCount:"+msgCount+"; msgBound:"+msgBound);
-		  	while(msgCount >= msgBound);			//no messages sent until 
-			this.nc.sendMsg(procID, msg);			//bound adjusted
-			//System.out.println("send message to " + Integer.toString(procID));
-			msgCount++;
+		    //System.out.println(myID+" msgCount:"+msgCount+"; msgBound:"+msgBound);
+		    
+		  	if (msgCount >= msgBound) {			//no messages sent until bound adjusted
+		  		String msgPair = Integer.toString(procID) + "|" + msg;
+		  		haltedMessages.add(msgPair);
+		  	}
+		  	else {
+		  		while (haltedMessages.size() > 0) {
+		  			String hMsg = haltedMessages.remove(0);
+		  			this.nc.sendMsg(Integer.parseInt(hMsg.split("|",2)[0]),hMsg.split("|",2)[1]);
+		  			msgCount++;
+		  		}
+		  		this.nc.sendMsg(procID, msg);			
+		  		//System.out.println("send message to " + Integer.toString(procID));
+		  		msgCount++;
+		  	}
 	  }
 		
 	  public List<String> retrieveMsgs() {

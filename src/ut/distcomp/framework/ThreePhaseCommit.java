@@ -197,11 +197,13 @@ public class ThreePhaseCommit {
 		pb.redirectOutput(Redirect.INHERIT);
 		pb.redirectError(Redirect.INHERIT);
 		try {
-			procList.set(procID,pb.start());
+			Process proc = pb.start();
+			procOutList.add(new BufferedWriter(new OutputStreamWriter(proc.getOutputStream())));
+			procList.set(procID,proc);
 		} catch (IOException e) {
-			System.err.println("Trouble reviving process p"+procID);
+			System.err.println("Trouble starting process p"+procID);
 			e.printStackTrace();
-		}	
+		}
 	}
 
 	public void reviveLast() {
@@ -226,7 +228,7 @@ public class ThreePhaseCommit {
 		
 		try {
 			System.out.println("3PC: Sending partialMessage "+numMsgs+" to p"+procID);
-			procOutList.get(procID).write("partialMessage "+numMsgs);
+			procOutList.get(procID).write("partialMessage "+numMsgs+"\n");
 			procOutList.get(procID).flush();
 		} catch (IOException e) {
 			System.err.println("3PC: Error writing 'partialMessage' "+numMsgs+" to process p"+procID);
@@ -239,7 +241,7 @@ public class ThreePhaseCommit {
 		
 		try {
 			System.out.println("3PC: Sending resumeMessages to p"+procID);
-			procOutList.get(procID).write("resumeMessages");
+			procOutList.get(procID).write("resumeMessages"+"\n");
 			procOutList.get(procID).flush();
 		} catch (IOException e) {
 			System.err.println("3PC: Error writing 'resumeMessages' to process p"+procID);
@@ -254,7 +256,7 @@ public class ThreePhaseCommit {
 			if (procList.get(i) != null)
 				try {
 					System.out.println("3PC: Sending allClear to p"+i);
-					procOutList.get(i).write("allClear");
+					procOutList.get(i).write("allClear"+"\n");
 					procOutList.get(i).flush();
 				} catch (IOException e) {
 					System.err.println("3PC: Error writing 'allClear' to process p"+i);
@@ -268,7 +270,7 @@ public class ThreePhaseCommit {
 		 
 		try {
 			System.out.println("3PC: Sending rejectNextChanse to p"+procID);
-			procOutList.get(procID).write("rejectNextChange");
+			procOutList.get(procID).write("rejectNextChange"+"\n");
 			procOutList.get(procID).flush();
 		} catch (IOException e) {
 			System.err.println("3PC: Error writing 'rejectNextChange' to process p"+procID);
