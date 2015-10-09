@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
@@ -132,7 +133,7 @@ public class Node {
   private void askOtherForHelp(MessageParser parser){
       parser.setMessageHeader(TransitionMsg.RECOVER_REQ.toString());
       parser.setSource(Integer.toString(myID));
-      
+      parser.setUpSet(upSet);
       // send everyone who is alive, just in my opnion
       for (int m : upSet){
         if(m!=myID){
@@ -230,17 +231,18 @@ public class Node {
         // start 3 PC
         if (parser.getMessageHeader().toString().equals(TransitionMsg.CHANGE_REQ.toString())){
         	myState = StateAC.START_3PC;
-        	dtLog.writeEntry(myState, parser.getTransaction());
+        	dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         	parser.setMessageHeader(TransitionMsg.VOTE_REQ.toString());
+        	parser.setUpSet(upSet);
         		for(int i = 0 ; i < viewNumber ; i++){
         			if(i!=coordinator){
                         //System.out.println("send message to " + Integer.toString(i));
-        				sendMsg(i, parser.composeMessage() );
+        				sendMsg(i, parser.composeWithUpset() );
         			}
         		}
         		playlistVoteActionAsCoordinator(parser);
         		myState = StateAC.WAIT_FOR_VOTE_DEC;
-        		dtLog.writeEntry(myState, parser.getTransaction());
+        		dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         }
         // receive VOTE_DEC YES
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.YES.toString()) ){
@@ -264,37 +266,47 @@ public class Node {
         }
         
         // Decide whether to precommit or abort;
-        Boolean ready = false;
-        if(!DecisionList.contains(0)) ready  = true;
         
+        Boolean ready = true;
+        for(int j : upSet){
+        	
+        	if(j == coordinator)
+        		continue;
+        	if(DecisionList.get(j) != 0)
+        		continue;
+        	else
+        		ready  = false;
+        }
         //System.out.println(DecisionList);
         
         if(ready){
         	//abort
         	if(DecisionList.contains(-1)){
         		parser.setMessageHeader(TransitionMsg.ABORT.toString());
-        		for(int j = 0 ; j < viewNumber ; j++){
+        		parser.setUpSet(upSet);
+        		for(int j : upSet){
         			if(j != coordinator && DecisionList.get(j)==1){
-        				sendMsg(j, parser.composeMessage());
+        				sendMsg(j, parser.composeWithUpset());
         			}
         		}
         		//log
         		 
                  myState = StateAC.ABORT;
-                 dtLog.writeEntry(myState, parser.getTransaction());
+                 dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         	}
         	//commit
         	else{
         		parser.setMessageHeader(TransitionMsg.PRECOMMIT.toString());
-        		for(int j = 0 ; j < viewNumber ; j++){
+        		upSet = parser.getUpSet();
+        		for(int j : upSet){
         			if(j != coordinator ){
-        				sendMsg(j, parser.composeMessage());
+        				sendMsg(j, parser.composeWithUpset());
         			}
         		}
         		//log
         
                  myState = StateAC.WAIT_FOR_ACKS;
-                 dtLog.writeEntry(myState, parser.getTransaction());
+                 dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         	}
         	
         	//clear the history
@@ -316,18 +328,19 @@ public class Node {
         	else
         		readyCommit  = false;
         }
-       System.out.println("The Up set is "+ upSet);
+       //System.out.println("The Up set is "+ upSet);
         if(readyCommit){
         	parser.setMessageHeader(TransitionMsg.COMMIT.toString());
+        	upSet = parser.getUpSet();
     		for(int j : upSet){
     			if(j != coordinator ){
-    				sendMsg(j, parser.composeMessage());
+    				sendMsg(j, parser.composeWithUpset());
     			}
     		}
     		//log
     		
             myState = StateAC.COMMIT;
-            dtLog.writeEntry(myState, parser.getTransaction());
+            dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
             for(int j = 0 ; j < viewNumber ; j++){
         		if(j!=myID)
     			ACKList.set(j, 0);
@@ -347,26 +360,29 @@ public class Node {
                 String song = parser.getOldSong();
                 //vote yes
                 if(playList.containsKey(song)){
-                	
+                	upSet = parser.getUpSet();
                 	myState = StateAC.DECIDE_YES;
-                    dtLog.writeEntry(myState, parser.getTransaction());
+                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                     
                     parser.setMessageHeader(TransitionMsg.YES.toString());
                     parser.setSource(Integer.toString(myID));
+                    
                     sendMsg(coordinator,parser.composeMessage());
                     
                     myState = StateAC.UNCERTAIN;
-                    dtLog.writeEntry(myState, parser.getTransaction());
+                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                 }
                 //vote no
                 else{
+                	upSet = parser.getUpSet();
                 	myState = StateAC.DECIDE_NO;
-                    dtLog.writeEntry(myState, parser.getTransaction());
+                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                     parser.setMessageHeader(TransitionMsg.NO.toString());
                     parser.setSource(Integer.toString(myID));
-                    sendMsg(coordinator,parser.composeMessage());
+                    
+                    sendMsg(coordinator,parser.composeWithUpset());
                     myState = StateAC.ABORT;
-                    dtLog.writeEntry(myState, parser.getTransaction());
+                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
 
                 }
         }
@@ -375,23 +391,27 @@ public class Node {
                String song = parser.getSong();
                //vote yes
                if(!playList.containsKey(song)){
+            	   upSet = parser.getUpSet();
             	   myState = StateAC.DECIDE_YES;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                    parser.setMessageHeader(TransitionMsg.YES.toString());
                    parser.setSource(Integer.toString(myID));
-                   sendMsg(coordinator,parser.composeMessage());
+                   
+                   sendMsg(coordinator,parser.composeWithUpset());
                    myState = StateAC.UNCERTAIN;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                }
                //vote no
                else{
+            	   upSet = parser.getUpSet();
             	   myState = StateAC.DECIDE_NO;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                    parser.setMessageHeader(TransitionMsg.NO.toString());
                    parser.setSource(Integer.toString(myID));
-                   sendMsg(coordinator,parser.composeMessage());
+                   
+                   sendMsg(coordinator,parser.composeWithUpset());
                    myState = StateAC.ABORT;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
 
                }
         }
@@ -400,23 +420,27 @@ public class Node {
                //vote yes
                String song = parser.getSong();
                if(playList.containsKey(song)){
+            	   upSet = parser.getUpSet();
             	   myState = StateAC.DECIDE_YES;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                    parser.setMessageHeader(TransitionMsg.YES.toString());
                    parser.setSource(Integer.toString(myID));
+                   
                    sendMsg(coordinator,parser.composeMessage());
                    myState =StateAC.UNCERTAIN;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                }
                //vote no
                else{
+            	   upSet = parser.getUpSet();
             	   myState = StateAC.DECIDE_NO;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                    parser.setMessageHeader(TransitionMsg.NO.toString());
                    parser.setSource(Integer.toString(myID));
+                   
                    sendMsg(coordinator,parser.composeMessage());
                    myState = StateAC.ABORT;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                }
         }
         // wrong vote request
@@ -434,13 +458,13 @@ public class Node {
                if(playList.containsKey(song)){
                	
                	   myState = StateAC.DECIDE_YES;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                    DecisionList.set(coordinator, 1);
                }
                //vote no
                else{
                	   myState = StateAC.DECIDE_NO;
-                   dtLog.writeEntry(myState, parser.getTransaction());
+                   dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                    DecisionList.set(coordinator, -1);
                }
        }
@@ -450,13 +474,13 @@ public class Node {
               //vote yes
               if(!playList.containsKey(song)){
            	      myState = StateAC.DECIDE_YES;
-                  dtLog.writeEntry(myState, parser.getTransaction());
+                  dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                   DecisionList.set(coordinator, 1);
               }
               //vote no
               else{
            	      myState = StateAC.DECIDE_NO;
-                  dtLog.writeEntry(myState, parser.getTransaction());
+                  dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                   DecisionList.set(coordinator, -1);
 
               }
@@ -467,13 +491,13 @@ public class Node {
               String song = parser.getSong();
               if(playList.containsKey(song)){
            	      myState = StateAC.DECIDE_YES;
-                  dtLog.writeEntry(myState, parser.getTransaction());
+                  dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                   DecisionList.set(coordinator, 1);
               }
               //vote no
               else{
            	      myState = StateAC.DECIDE_NO;
-                  dtLog.writeEntry(myState, parser.getTransaction());
+                  dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                   DecisionList.set(coordinator, -11);
               }
        }
@@ -492,28 +516,31 @@ public class Node {
     private void playListFollowAction(MessageParser parser){
     	 // edit commit
         if (parser.getInstruction().equalsIgnoreCase("edit")){
+        	   upSet = parser.getUpSet();
                String newsong = parser.getSong();
                String oldsong = parser.getOldSong();
                String url = parser.getUrl();
                edit(oldsong,newsong,url);
                myState = StateAC.COMMIT;
-               dtLog.writeEntry(myState, parser.getTransaction());
+               dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
 
         }
         //commit for add
         else if (parser.getInstruction().equalsIgnoreCase("add")){
+        		upSet = parser.getUpSet();
                 String song = parser.getSong();
                 String url = parser.getUrl();
                 add(song, url);
                 myState = StateAC.COMMIT;
-                dtLog.writeEntry(myState, parser.getTransaction());
+                dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         }
         // commit for delete
         else if (parser.getInstruction().equalsIgnoreCase("del")){
+        		upSet = parser.getUpSet();
                 String song = parser.getSong();
                 remove(song);
                 myState = StateAC.COMMIT;
-                dtLog.writeEntry(myState, parser.getTransaction());
+                dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         }
         // wrong vote request
         else{
@@ -541,9 +568,11 @@ public class Node {
                 // send the message
                 parser.setMessageHeader(TransitionMsg.ACK.toString());
                 parser.setSource(Integer.toString(myID));
-                sendMsg(coordinator,parser.composeMessage());
+                upSet = parser.getUpSet();
+                
+                sendMsg(coordinator,parser.composeWithUpset());
                 myState = StateAC.COMMITABLE;
-                dtLog.writeEntry(myState, parser.getTransaction());
+                dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         }
 
         //Receive commit message
@@ -559,7 +588,8 @@ public class Node {
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.ABORT.toString())){
                 // log the message
         		myState = StateAC.ABORT;
-        		dtLog.writeEntry(myState, parser.getTransaction());
+        		upSet = parser.getUpSet();
+        		dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         }
 
         //Receive state request
@@ -598,6 +628,7 @@ public class Node {
                  int j = Integer.parseInt(parser.getSource());
                  parser.setMessageHeader(TransitionMsg.RECOVER_REP.toString());
                  parser.setStateInfo(StateAC.COMMIT);
+                 
                  parser.setUpSet(upSet);
                  sendMsg(j, parser.composeWithUpset());
                  System.out.println("I am helping others to revive"); 
@@ -617,12 +648,21 @@ public class Node {
             
           //Before make decision, first to make sure I am the last process to fail
          boolean lastProces = false;
-         recoveryUpSets.add(parser.getUpSet());
+         HashSet<Integer> unionHashSet = new HashSet<Integer>();
+         if(isSubset(parser.getUpSet(),upSet))
+        	 lastProces = true;
          
-         for (){
-        	 
+         recoveryUpSets.add(parser.getUpSet());
+         unionHashSet = parser.getUpSet();
+         
+         for (HashSet<Integer> m : recoveryUpSets){
+        	  unionHashSet = unionOfHashSet(unionHashSet, m);
          }
          
+         if(isSubset(unionHashSet, upSet))
+        	 lastProces = true;
+         
+         // If I am the last process to fail
                  
          if(pending && lastProces){    
              if(parser.getStateInfo()==StateAC.COMMIT){
@@ -650,12 +690,13 @@ public class Node {
         	    upSet = parser.getUpSet();
         	    //System.out.println("my new UP set is " + upSet);
         	    //Send out the State_REQ
+        	    parser.setUpSet(upSet);
         	    sendStateReq(parser);
         	    
         	    // change my state and DT log that
         	    
         	    myState = StateAC.WAIT_FOR_STATE_RES;
-        	    dtLog.writeEntry(myState, parser.getTransaction()+";"+ "UPset = " + upSet);
+        	    dtLog.writeEntry(myState, parser.getTransaction()+";"+ "UPset :" + upSet);
         	    //And now I am new Coordinator
         	    getMessageAsCoordinator();
         }
@@ -667,7 +708,43 @@ public class Node {
         }
     }
 
-  /*
+    
+    
+    /*
+     *  Check whether 2 hashset has belong relationship
+     *   
+     */
+    
+    private boolean isSubset (HashSet<Integer> a, HashSet<Integer> b) {
+		  	boolean result = true;
+		  	
+		  	for(int tmp : a){
+		  		if(! b.contains(tmp))
+		  			result = false;
+		  	}
+		  	
+		  	return result;
+	}
+    
+    /*
+     * 
+     * Get the Union of 2 Hashset
+     * 
+     * */
+    
+    private HashSet<Integer> unionOfHashSet(HashSet<Integer> a, HashSet<Integer> b){
+    	   HashSet<Integer> result = new HashSet<Integer>();
+    	   for(int j : a){
+    		    if(b.contains(j)){
+    		    	result.add(j);
+    		    }
+    	   }
+    	   return result;
+    }
+    
+    
+    
+    /*
      *  Check Whether the 2 parser contain same action
      */
     
@@ -686,15 +763,23 @@ public class Node {
       
     }
 
-
+	/*
+	 *   Get the ID
+	 */
 	public int getID() {
 		return nc.getConfig().procNum;
 	}
 	
+	/*
+	 *   Get the number of process
+	 */
 	public int getNumProcesses() {
 		return nc.getConfig().numProcesses;
 	}
 	
+	/*
+	 *   Get the Time out
+	 */
 	public int getTimeOut() {
 		return nc.getConfig().timeOut;
 	}
@@ -781,41 +866,41 @@ public class Node {
            	  	 MessageParser actionMessageParser = new MessageParser();
            	  	 actionMessageParser =stateReqList.get(1);
            	  		 	
-           	  	actionMessageParser.setMessageHeader(header.toString());
-           	  	 
+           	  	 actionMessageParser.setMessageHeader(header.toString());
+           	  	 upSet = actionMessageParser.getUpSet();
            	  	 // if decision is Abort
            	  	 if(header == TransitionMsg.ABORT){
            	  		
            	  		 for(MessageParser tmp : stateReqList){
            	  			 int j = Integer.parseInt(tmp.getSource());
-           	  			 	sendMsg(j, currentAction.composeMessage());
+           	  			 	sendMsg(j, currentAction.composeWithUpset());
            	  		 }
            	  		 
            	  		 myState  = StateAC.ABORT;
-           	  		 dtLog.writeEntry(myState, actionMessageParser.getTransaction());
+           	  		 dtLog.writeEntry(myState, actionMessageParser.getTransaction()+";"+"UPset :"+upSet);
            	  	 }   
            	  	
            	  	 // if the decision is Commit 
            	    if(header == TransitionMsg.COMMIT){
-        	  		 
+        	  		 upSet = actionMessageParser.getUpSet();
         	  		 for(MessageParser tmp : stateReqList){
          	  			 int j = Integer.parseInt(tmp.getSource());
-         	  				 sendMsg(j, actionMessageParser.composeMessage());
+         	  				 sendMsg(j, actionMessageParser.composeWithUpset());
          	  		 }
         	  		 
         	  		myState  = StateAC.COMMIT;
-        	  		dtLog.writeEntry(myState, actionMessageParser.getTransaction());
+        	  		dtLog.writeEntry(myState, actionMessageParser.getTransaction()+";"+"UPset :"+upSet);
         	  	 }   
            	    
            	    // if the decision is Precommit
            	   if(header == TransitionMsg.PRECOMMIT){
            		   boolean isUncertain = false;
-           		   
+           		   actionMessageParser.setUpSet(upSet);
            		   // Sent every uncertain case a Precommit info
            		   for(MessageParser tmp : stateReqList){
       	  			 if(tmp.getStateInfo() == StateAC.UNCERTAIN ){
       	  				 int j = Integer.parseInt(tmp.getSource());
-      	  				 sendMsg(j, actionMessageParser.composeMessage());
+      	  				 sendMsg(j, actionMessageParser.composeWithUpset());
       	  				 System.out.println("Re issue precommit"+ actionMessageParser.composeMessage());
       	  				 isUncertain = true;
       	  			 }
@@ -824,18 +909,19 @@ public class Node {
       	  		  // Corner case, if everyone is commitable, send commit
       	  		  if(!isUncertain){
       	  			 actionMessageParser.setMessageHeader(TransitionMsg.COMMIT.toString());
+      	  			 actionMessageParser.setUpSet(upSet);
       	  			 for(MessageParser tmp : stateReqList){
       	  				 if(tmp.getStateInfo() == StateAC.COMMITABLE ){
       	  				 	int j = Integer.parseInt(tmp.getSource());
-      	  				 	sendMsg(j, actionMessageParser.composeMessage());      	  		
+      	  				 	sendMsg(j, actionMessageParser.composeWithUpset());      	  		
       	  				 }
       	  			 }
       	  			 myState  = StateAC.COMMIT;
-    	  			 dtLog.writeEntry(myState, actionMessageParser.getTransaction());
+    	  			 dtLog.writeEntry(myState, actionMessageParser.getTransaction()+";"+"UPset :"+upSet);
 
       	  		  }else{
       	  			 myState  = StateAC.WAIT_FOR_ACKS;
-      	  			 dtLog.writeEntry(myState, actionMessageParser.getTransaction());
+      	  			 dtLog.writeEntry(myState, actionMessageParser.getTransaction()+";"+"UPset :"+upSet);
       	  			 System.out.println("Send out precommit");
       	  		 }
       	  	   }   
@@ -851,27 +937,58 @@ public class Node {
              if(!atLeastOneBoolean && myState==StateAC.WAIT_FOR_VOTE_DEC){
             	  System.out.println("Time out action for coordinator wait for vote Decision");
             	  currentAction.setMessageHeader(TransitionMsg.ABORT.toString());
-          		  for(int j = 0 ; j < viewNumber ; j++){
+            	  
+            	  //update the decision list
+            	  Iterator<Integer> iterator = upSet.iterator();
+            	  while (iterator.hasNext()) {
+            	      Integer element = iterator.next();
+            	      if (DecisionList.get(element) == 0) {
+            	          iterator.remove();
+            	      }
+            	  }
+            	  //clear the decision list
+            	  for(int p = 0 ; p < config.numProcesses;p++){
+            		   DecisionList.set(p, 0);
+            	  }
+            	  
+            	  currentAction.setUpSet(upSet);
+          		  for(int j :upSet){
           		 	if(j != coordinator ){
-          				sendMsg(j, currentAction.composeMessage());
+          				sendMsg(j, currentAction.composeWithUpset());
           			}
           		  }
             	  myState = StateAC.ABORT;
-            	  dtLog.writeEntry(myState, currentAction.getTransaction());
+            	  dtLog.writeEntry(myState, currentAction.getTransaction()+";"+"UPset :" +upSet );
              }
+             
              // if there is no ACK come back
              else if (!atLeastOneBoolean && myState == StateAC.WAIT_FOR_ACKS){
             	 System.out.println("Time out action for coordinator ACK");
             	 currentAction.setMessageHeader(TransitionMsg.COMMIT.toString());
-         		 for(int j = 0 ; j < viewNumber ; j++){
+            	 
+            	  //update the decision list
+            	 Iterator<Integer> iterator = upSet.iterator();
+           	     while (iterator.hasNext()) {
+           	       Integer element = iterator.next();
+           	       if (DecisionList.get(element) == 0) {
+           	          iterator.remove();
+           	       }
+           	     }
+           	  	//clear the decision list
+           	  	for(int p = 0 ; p < config.numProcesses;p++){
+           	  		ACKList.set(p, 0);
+           	  	}
+           	    // send the data
+           	  	currentAction.setUpSet(upSet);
+         		for(int j : upSet){
          		 	if(j != coordinator ){
-         				sendMsg(j, currentAction.composeMessage());
+         				sendMsg(j, currentAction.composeWithUpset());
          			}
          		 }
          		 //log
          		
                 myState = StateAC.COMMIT;
-                dtLog.writeEntry(myState, currentAction.getTransaction());
+                dtLog.writeEntry(myState, currentAction.getTransaction()+";"+"UPset :" +upSet);
              }
             
              
@@ -933,8 +1050,11 @@ public class Node {
               if(!atleastone && myState == StateAC.IDLE){
             	  	  System.out.println("Participant wait for Coordinator's Vote Request");
             	  	  coordinatorWorking = false;
+            	  	  upSet.remove(coordinator);
             	      myState = StateAC.ABORT;
-            	      dtLog.writeEntry(myState, "wait for vote request");
+            	      // update UP set
+            	      currentAction.setUpSet(upSet);
+            	      dtLog.writeEntry(myState, currentAction.getTransaction() +";"+"UPset :"+upSet);
               }
               
               // wait for Precommit message from coordinator
@@ -944,6 +1064,7 @@ public class Node {
             	      //remove coordinator in UP set
             	      upSet.remove(coordinator);
             	      //run election protocol  and send state request
+            	      currentAction.setUpSet(upSet);
             	      int newCoor = electionProtocol(currentAction);
             	      
             	      //System.out.println("I am " + myID + " new coordinator is " + Integer.toString(newCoor));
@@ -955,6 +1076,7 @@ public class Node {
             	  	  System.out.println("Participant wait for Coordinator's Commit");
             	  	  coordinatorWorking=false;
             	  	  upSet.remove(coordinator);
+            	  	  currentAction.setUpSet(upSet);
             	  	  //run election protocol  and send state request
             	  	  int newCoor = electionProtocol(currentAction);
               }
@@ -1050,7 +1172,7 @@ public class Node {
 	 */
 	private int electionProtocol(MessageParser parser){
 		parser.setSource(Integer.toString(myID));
-		parser.initHashSet(upSet.toString());
+		
 		int newC = Integer.MAX_VALUE;
 		for(int m : upSet){
 			newC = Math.min(newC, m);
@@ -1087,7 +1209,8 @@ public class Node {
 	        stResponse.setSource(String.valueOf(config.procNum));
 	        stResponse.setMessageHeader(TransitionMsg.STATE_RES.toString());
 	        stResponse.setStateInfo(myState);
-	        String stateResponse = stResponse.composeMessage();
+	        upSet = stResponse.getUpSet();
+	        String stateResponse = stResponse.composeWithUpset();
 
 	        sendMsg(Integer.valueOf(senderProcNum), stateResponse);
 	        

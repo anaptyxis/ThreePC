@@ -54,7 +54,7 @@ public class Recovery {
 					//get the most recent UP set
 					if(line.contains("UPset")){
 						setHashSet(split_input[size-1]);
-						stateList.add(StateAC.IDLE);
+						//stateList.add(StateAC.IDLE);
 					}
 					// there is a decision
 					else if(line.contains("decision")){
