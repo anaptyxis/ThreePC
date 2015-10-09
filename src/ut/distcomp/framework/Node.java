@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.CookieHandler;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -209,7 +210,7 @@ public class Node {
 					if (strArr[0].equals("edit"))
 						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + "," + strArr[2] + ";" + strArr[3] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 					if (strArr[0].equals("remove"))
-						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
+						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + strArr[2] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 					System.out.println(line);
 				}
 			} while (line != null); 						
@@ -233,13 +234,14 @@ public class Node {
         MessageParser parser = new MessageParser(message);
         // start 3 PC
         if (parser.getMessageHeader().toString().equals(TransitionMsg.CHANGE_REQ.toString())){
+        	System.out.println("I receive change request");
         	myState = StateAC.START_3PC;
         	dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         	parser.setMessageHeader(TransitionMsg.VOTE_REQ.toString());
         	parser.setUpSet(upSet);
-        		for(int i = 0 ; i < viewNumber ; i++){
+        		for(int i : upSet){
         			if(i!=coordinator){
-                        //System.out.println("send message to " + Integer.toString(i));
+                        System.out.println("send vote request to " + parser.composeMessage());
         				sendMsg(i, parser.composeWithUpset() );
         			}
         		}
@@ -395,7 +397,7 @@ public class Node {
                     parser.setMessageHeader(TransitionMsg.YES.toString());
                     parser.setSource(Integer.toString(myID));
                     
-                    sendMsg(coordinator,parser.composeMessage());
+                    sendMsg(coordinator,parser.composeWithUpset());
                     
                     myState = StateAC.UNCERTAIN;
                     dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
@@ -444,7 +446,7 @@ public class Node {
                }
         }
         // request for delete
-        else if (parser.getInstruction().equalsIgnoreCase("del")){
+        else if (parser.getInstruction().equalsIgnoreCase("remove")){
                //vote yes
                String song = parser.getSong();
                if(playList.containsKey(song)){
@@ -454,7 +456,7 @@ public class Node {
                    parser.setMessageHeader(TransitionMsg.YES.toString());
                    parser.setSource(Integer.toString(myID));
                    
-                   sendMsg(coordinator,parser.composeMessage());
+                   sendMsg(coordinator,parser.composeWithUpset());
                    myState =StateAC.UNCERTAIN;
                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                }
@@ -466,7 +468,7 @@ public class Node {
                    parser.setMessageHeader(TransitionMsg.NO.toString());
                    parser.setSource(Integer.toString(myID));
                    
-                   sendMsg(coordinator,parser.composeMessage());
+                   sendMsg(coordinator,parser.composeWithUpset());
                    myState = StateAC.ABORT;
                    dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
                }
@@ -514,7 +516,7 @@ public class Node {
               }
        }
        // request for delete
-       else if (parser.getInstruction().equalsIgnoreCase("del")){
+       else if (parser.getInstruction().equalsIgnoreCase("remove")){
               //vote yes
               String song = parser.getSong();
               if(playList.containsKey(song)){
@@ -563,7 +565,7 @@ public class Node {
                 dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         }
         // commit for delete
-        else if (parser.getInstruction().equalsIgnoreCase("del")){
+        else if (parser.getInstruction().equalsIgnoreCase("remove")){
         		upSet = parser.getUpSet();
                 String song = parser.getSong();
                 remove(song);
@@ -585,7 +587,7 @@ public class Node {
         // Receive vote request message
 
         if(parser.getMessageHeader().toString().equals(TransitionMsg.VOTE_REQ.toString())){
-               
+                //System.out.println("receive vote request" + parser.composeMessage());
               	playlistVoteAction(parser);
      
         }
@@ -869,7 +871,8 @@ public class Node {
 	 */
 	
 	private void getMessageAsCoordinator() throws InterruptedException{
-		 while(true){
+		System.out.println("Function call "+ Integer.toString(myID)); 
+		while(true){
 			 
 			 //first check to see if any incoming messages from controller
 			 //checkForControllerDirectives();
@@ -894,6 +897,7 @@ public class Node {
                 		stateReqList.add(currentAction);
                 	}
                 	else {
+                		System.out.println("receive as coordinator" + m);
                 		processReceivedMsgAscoordinator(m);
 					}
                     
@@ -1038,6 +1042,7 @@ public class Node {
                 dtLog.writeEntry(myState, currentAction.getTransaction()+";"+"UPset :" +upSet);
              }
              else if (!atLeastOneBoolean){
+            	 System.out.println("I am Here "+ Integer.toString(myID));
             	 myState = StateAC.IDLE;
             	 break;
              }
@@ -1051,7 +1056,7 @@ public class Node {
 	 * 
 	 */
 	 private void getMessagesAsParticipant() throws InterruptedException {
-		 
+		  System.out.println("Function call "+ Integer.toString(myID));
           while(true){
 
   			 //first check to see if any incoming messages from controller
@@ -1145,6 +1150,7 @@ public class Node {
               }
               
               else if (!atleastone){
+            	 System.out.println("I am Here "+ Integer.toString(myID));
              	 myState = StateAC.IDLE;
              	 break;
               }
@@ -1332,6 +1338,7 @@ public class Node {
 	  * 
 	  * 
 	  */
+	  
 	public static void main(String[] args) throws InterruptedException {
 		
 		boolean revival = (args[2].trim().equals("revive"));
@@ -1343,20 +1350,28 @@ public class Node {
 			n.getMessagesAsParticipant();
 		}else{
 			// fresh start
-			if(n.myID==1){
-				n.readActions("ActionList.txt");
+			n.readActions("ActionList.txt");
+			while(true){
+				if(n.myID==1){
+							
+					if(!n.ActionList.isEmpty()){
+						MessageParser parser = n.ActionList.getFirst();
+						System.out.println("I am sending out" + parser.composeMessage()+" to "+Integer.toString(n.coordinator));
+						n.sendMsg(n.coordinator,parser.composeMessage());
+						n.ActionList.removeFirst();
+					}
+				}
 				
-				MessageParser parser = n.ActionList.getFirst();
-				n.sendMsg(0,parser.composeMessage());
-					
+				if(n.myID == n.coordinator){
+					n.getMessageAsCoordinator();
+					Thread.sleep(n.getTimeOut()/10);
+				}
+				else{
+					n.getMessagesAsParticipant();
+				}
+				
+      
 			}
-			Thread.sleep(1000);
-			if(n.myID == n.coordinator)
-				n.getMessageAsCoordinator();
-			else
-				n.getMessagesAsParticipant();
-      
-      
     }
   }
   

@@ -124,22 +124,32 @@ public class Recovery {
 		public void makeDecision(){
 			System.out.println("Last state is "+ lastState.toString());
 			System.out.println("old decision is "+ old_decision);
-		    // Fails before sending Yes
-			if(old_decision.equals("yes") && lastState == StateAC.DECIDE_YES){
-				 askOthers = false;
-				 whatIdo = "abort";
+			
+			if(old_decision != null){
+					// Fails before sending Yes
+					if(old_decision.equals("yes") && lastState == StateAC.DECIDE_YES){
+							askOthers = false;
+							whatIdo = "abort";
+					}
+					//Fails before sending No
+					else if(old_decision.equals("no") && lastState == StateAC.DECIDE_NO){
+							askOthers = false;
+							whatIdo = "abort";
+					}
+					//Fails after sending yes
+					else if(old_decision.equals("yes") && lastState == StateAC.UNCERTAIN){
+						   askOthers = true;
+						   whatIdo = "decide_yes";
+					}
+					else if(lastState == StateAC.COMMITABLE){
+							askOthers = true;
+							whatIdo = "decide_yes";
+					}
 			}
-			else if(old_decision.equals("no") && lastState == StateAC.DECIDE_NO){
-				askOthers = false;
-				whatIdo = "abort";
-			}
-			else if(old_decision.equals("yes") && lastState == StateAC.UNCERTAIN){
-				askOthers = true;
-				whatIdo = "decide_yes";
-			}
-			else if(lastState == StateAC.COMMITABLE){
-				askOthers = true;
-				whatIdo = "decide_yes";
+			
+			//There is no pending decision
+			else{
+				
 			}
 		}
 		
