@@ -3,5 +3,5 @@ wait 5
 kill 1
 wait 26
 revive 1
-wait 10
+wait 15
 killAll
