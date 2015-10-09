@@ -1,3 +1,4 @@
+rm bin/ut/distcomp/framework/*.class
 echo "Compile"
 javac -d bin src/ut/distcomp/framework/*.java
 echo "Running"

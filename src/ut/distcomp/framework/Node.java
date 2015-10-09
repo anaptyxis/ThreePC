@@ -55,7 +55,7 @@ public class Node {
 	private LinkedList<MessageParser> messageQueue;
 	private ArrayList<String> haltedMessages;
 	private boolean voteNo;
-	
+	private HashSet<Integer> Rset = new HashSet<Integer>();
 	
 	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
@@ -682,42 +682,72 @@ public class Node {
         	}
         }
 
-         //Receive recover response
+        //Receive recover response
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REP.toString())){
-          // get the decision only when there is pending info and no total failure happens
+         
             
-          //Before make decision, first to make sure I am the last process to fail
-         boolean lastProces = false;
-         HashSet<Integer> unionHashSet = new HashSet<Integer>();
-         if(isSubset(parser.getUpSet(),upSet))
-         lastProces = true;
+         // If there is not total failure
+         if(!TotalFailure){
+        	 if(pending ){    
+                 if(parser.getStateInfo()==StateAC.COMMIT){
+                     upSet = parser.getUpSet();
+                     myState = StateAC.COMMIT;
+                     dtLog.writeEntry(myState, parser.getTransaction()+"; UPset :"+ upSet);
+                     oldDecisionList.add(parser);
+                     pending = false;
+                     System.out.println("My pending decision is resolved");
+                  }else if (parser.getStateInfo()==StateAC.ABORT){
+                	  upSet = parser.getUpSet();
+                      myState = StateAC.ABORT;
+                      dtLog.writeEntry(myState, parser.getTransaction()+"; UPset :"+ upSet);
+                      oldDecisionList.add(parser);
+                      pending = false;
+                      System.out.println("My pending decision is resolved");
+                  }
+                recoveryUpSets.clear();
+             }
+         }else{
+        	 System.out.println("Total Failure");
+        	 boolean lastProces = false;
+        	 HashSet<Integer> unionHashSet = new HashSet<Integer>();
+             
          
-         recoveryUpSets.add(parser.getUpSet());
-         unionHashSet = parser.getUpSet();
-         
-         for (HashSet<Integer> m : recoveryUpSets){
-        	  unionHashSet = unionOfHashSet(unionHashSet, m);
-         }
-         System.out.println("The union set is"+ unionHashSet);
-         if(isSubset(unionHashSet, upSet))
-        	 lastProces = true;
+        	 recoveryUpSets.add(parser.getUpSet());
+        	 unionHashSet = parser.getUpSet();
+        	 Rset.add(Integer.parseInt(parser.getSource()));
+        	 for (HashSet<Integer> m : recoveryUpSets){
+        		 unionHashSet = unionOfHashSet(unionHashSet, m);
+        		 
+        	 }
+        	 System.out.println("The union set is"+ unionHashSet);
+        	 if(isSubset(unionHashSet, Rset))
+        		 lastProces = true;
          
          // If I am the last process to fail
                  
-         if(pending && lastProces){    
-             if(parser.getStateInfo()==StateAC.COMMIT){
-                 upSet = parser.getUpSet();
-                 myState = StateAC.COMMIT;
-                 dtLog.writeEntry(myState, parser.getTransaction()+"; UPset :"+ upSet);
-                 oldDecisionList.add(parser);
-                 pending = false;
-                 System.out.println("My pending decision is resolved");
-              } 
-            recoveryUpSets.clear();
-          }
+        	 if(lastProces){    
+        		 if(recover.getLastState()==StateAC.COMMIT){
+        			 upSet = Rset;
+        			 myState = StateAC.COMMIT;
+        			 dtLog.writeEntry(myState, recover.getDecisionList().get(recover.getDecisionList().size()-1).getTransaction()+"; UPset :"+ upSet);
+        			 oldDecisionList.add(recover.getDecisionList().get(recover.getDecisionList().size()-1));
+        			 TotalFailure = false;
+        			 System.out.println("I am resove the total failure");
+        		 } else {
+        			 upSet = Rset;
+        			 myState = StateAC.ABORT;
+        			 dtLog.writeEntry(myState, recover.getPendingDecision().getTransaction()+"; UPset :"+upSet);
+        			 oldDecisionList.add(recover.getPendingDecision());
+        			 TotalFailure = false;
+        		 }
+             recoveryUpSets.clear();
+             Rset.clear();
+        	 }
+         }
           
         }
+        
         
         //Receive UR_ELECTED message, I am new coordinator now
 
@@ -1154,11 +1184,10 @@ public class Node {
              // wait for recovery response from others
              // if there is no response until timeout, then total failure is happend
               else if(!atleastone && myState==StateAC.WAIT_FOR_RECOVER_REP){
-            	  	  System.out.println("Seems total failure happens");
-            	  	  TotalFailure = true;
-            	  	  coordinatorWorking=false;
-            	  	  upSet.clear();
-            	  	  upSet.add(myID);
+            	     System.out.println("Seems total failure happens");
+        	  	     TotalFailure = true;
+        	  	     coordinatorWorking=false;
+        	  	     askOtherForHelp(recover.getPendingDecision());
             	  	  
             	  	  
               }
@@ -1364,40 +1393,40 @@ public class Node {
 	  * 
 	  */
 	  
-	public static void main(String[] args) throws InterruptedException {
-		
-		boolean revival = (args[2].trim().equals("revive"));
-		Node n = new Node(args[0],args[1], revival);
-		//MessageParser parser= new MessageParser( Integer.toString(n.myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
-   
-		// revival start
-		if(revival){
-			n.getMessagesAsParticipant();
-		}else{
-			// fresh start
-			n.readActions("ActionList.txt");
-			while(true){
-				if(n.myID==1){
-							
-					if(!n.ActionList.isEmpty()){
-						MessageParser parser = n.ActionList.getFirst();
-						System.out.println("I am sending out" + parser.composeMessage()+" to "+Integer.toString(n.coordinator));
-						n.sendMsg(n.coordinator,parser.composeMessage());
-						n.ActionList.removeFirst();
+	  public static void main(String[] args) throws InterruptedException {
+			
+			boolean revival = (args[2].trim().equals("revive"));
+			Node n = new Node(args[0],args[1], revival);
+			//MessageParser parser= new MessageParser( Integer.toString(n.myID) + ";" + "add" + ";" +"test" + ";"+"http://www.google.com" + ";"+ TransitionMsg.CHANGE_REQ.toString());
+	   
+			// revival start
+			if(revival){
+				n.getMessagesAsParticipant();
+			}else{
+				// fresh start
+				n.readActions("ActionList.txt");
+				while(true){
+					if(n.myID==(n.coordinator+1)%n.viewNumber){
+								
+						if(!n.ActionList.isEmpty()){
+							MessageParser parser = n.ActionList.getFirst();
+							System.out.println("I am sending out" + parser.composeMessage()+" to "+Integer.toString(n.coordinator));
+							n.sendMsg(n.coordinator,parser.composeMessage());
+							n.ActionList.removeFirst();
+						}
 					}
+					
+					if(n.myID == n.coordinator){
+						n.getMessageAsCoordinator();
+						Thread.sleep(n.getTimeOut()/10);
+					}
+					else{
+						n.getMessagesAsParticipant();
+					}
+					
+	      
 				}
-				
-				if(n.myID == n.coordinator){
-					n.getMessageAsCoordinator();
-					Thread.sleep(n.getTimeOut()/10);
-				}
-				else{
-					n.getMessagesAsParticipant();
-				}
-				
-      
-			}
-    }
-  }
-  
-}
+	    }
+	  }
+	  
+	}
