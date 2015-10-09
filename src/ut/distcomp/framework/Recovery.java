@@ -126,13 +126,15 @@ public class Recovery {
 			System.out.println("old decision is "+ old_decision);
 			
 			if(old_decision != null){
-					// Fails before sending Yes
-					if(old_decision.equals("yes") && lastState == StateAC.DECIDE_YES){
+				    // If I am a participant before I died
+					
+					//Fails before sending No
+				   if(old_decision.equals("no")){
 							askOthers = false;
 							whatIdo = "abort";
 					}
-					//Fails before sending No
-					else if(old_decision.equals("no") && lastState == StateAC.DECIDE_NO){
+				    // Fails before sending Yes
+			        else if(old_decision.equals("yes") && lastState == StateAC.DECIDE_YES){
 							askOthers = false;
 							whatIdo = "abort";
 					}
@@ -141,15 +143,30 @@ public class Recovery {
 						   askOthers = true;
 						   whatIdo = "decide_yes";
 					}
-					else if(lastState == StateAC.COMMITABLE){
+					else if(old_decision.equals("yes") && lastState == StateAC.COMMITABLE){
 							askOthers = true;
 							whatIdo = "decide_yes";
 					}
+					
+					// I am a coordinator before I die
+					else if(old_decision.equals("yes") && lastState == StateAC.WAIT_FOR_ACKS){
+						askOthers = true;
+						whatIdo = "decide_yes";
+					}
+				   
+					else if(old_decision.equals("yes") && lastState == StateAC.WAIT_FOR_VOTE_DEC){
+						askOthers = true;
+						whatIdo = "decide_yes";
+					}
+					
+					
+					
 			}
 			
 			//There is no pending decision
 			else{
-				
+				askOthers = true;
+				whatIdo = "ask";
 			}
 		}
 		
