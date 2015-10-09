@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.CookieHandler;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,7 +42,7 @@ public class Node {
 	private MessageParser currentAction = null;
 	private int msgCount;
 	private int msgBound;
-	private Scanner inputFromController;
+	private BufferedReader inputFromController;
 	
 	private ArrayList<MessageParser> oldDecisionList = new ArrayList<MessageParser>();
 	private Recovery recover = null;
@@ -78,7 +79,7 @@ public class Node {
 		currentAction = new MessageParser();
 		msgCount = 0;
 		msgBound = Integer.MAX_VALUE;		//start with no bound on msgCount
-		inputFromController = new Scanner(System.in);	
+		inputFromController = new BufferedReader(new InputStreamReader(System.in));	
 		messageQueue = new LinkedList<MessageParser>();
 		// not the revival case
 		if(!revival){
@@ -851,18 +852,26 @@ public class Node {
 	 */
 	private void checkForControllerDirectives() {
 		 
-		 if (inputFromController.hasNextLine()) { 
-			String incoming = inputFromController.nextLine();
-			String[] strArr = incoming.split(" ");
-			if (strArr[0].equals("partialMessage"))
-				setMsgBound(Integer.parseInt(strArr[1]));
-			if (strArr[0].equals("resumeMessages"))
-				setMsgBound(Integer.MAX_VALUE);
-			//if (strArr[0].equals("allClear"))
-				//stuff
-			//if (strArr[0].equals("rejectNextChange"))
-				//stuff
-		 }
+		 try {
+			if (inputFromController.ready()) { 
+				String incoming = inputFromController.readLine();
+				String[] strArr = incoming.split(" ");
+				if (strArr[0].equals("partialMessage"))
+					setMsgBound(Integer.parseInt(strArr[1]));
+				if (strArr[0].equals("resumeMessages"))
+					setMsgBound(Integer.MAX_VALUE);
+				//if (strArr[0].equals("allClear"))
+					//stuff
+				//if (strArr[0].equals("rejectNextChange"))
+					//stuff
+			 }
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	
@@ -875,7 +884,7 @@ public class Node {
 		while(true){
 			 
 			 //first check to see if any incoming messages from controller
-			 //checkForControllerDirectives();
+			 checkForControllerDirectives();
 			// System.out.println("I am here");
              List<String> messages = null;
              ArrayList<MessageParser> stateReqList = new ArrayList<MessageParser>();
@@ -1060,7 +1069,7 @@ public class Node {
           while(true){
 
   			 //first check to see if any incoming messages from controller
-  			 //checkForControllerDirectives();
+  			 checkForControllerDirectives();
         	  
         	  List<String> messages ;
               long startTime = (System.currentTimeMillis()+getTimeOut()*11/10);
