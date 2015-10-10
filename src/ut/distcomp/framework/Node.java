@@ -942,11 +942,11 @@ public class Node {
 	}
 
 	public void editRcv(String n1, String n2, String u) {
-		sendMsg(coordinator,(new MessageParser( Integer.toString(myID) + ";" + "edit" + ";" + n1 + ";" + n2 + ";" + u + ";"+ StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()).composeMessage()));
+		sendMsg(coordinator,(new MessageParser( Integer.toString(myID) + ";" + "edit" + ";" + n1 + "," + n2 + ";" + u + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()).composeMessage()));
 	}
 
 	public void removeRcv(String n) {
-		sendMsg(coordinator,(new MessageParser( Integer.toString(myID) + ";" + "remove" + ";" + n + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()).composeMessage()));
+		sendMsg(coordinator,(new MessageParser( Integer.toString(myID) + ";" + "remove" + ";" + n + ";" + "         "+";"+StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()).composeMessage()));
 	}
 
 	/*
