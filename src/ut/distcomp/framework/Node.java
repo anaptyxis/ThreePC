@@ -921,6 +921,12 @@ public class Node {
 				if (strArr[0].equals("add")) {
 					addRcv(strArr[1],strArr[2]);
 				}
+				if (strArr[0].equals("edit")) {
+					editRcv(strArr[1],strArr[2],strArr[3]);
+				}
+				if (strArr[0].equals("remove")) {
+					removeRcv(strArr[1]);
+				}
 					
 			 }
 		} catch (NumberFormatException e) {
