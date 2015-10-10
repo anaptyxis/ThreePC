@@ -932,7 +932,7 @@ public class Node {
 	}
 	
 	public void addRcv(String n, String u) {
-		ActionList.add(new MessageParser( Integer.toString(myID) + ";" + "add" + ";" + n + ";" + u + ";"+ StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
+		sendMsg(coordinator,(new MessageParser( Integer.toString(myID) + ";" + "add" + ";" + n + ";" + u + ";"+ StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()).composeMessage()));
 	}
 	
 	/*
