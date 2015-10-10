@@ -1,6 +1,6 @@
-idle;2015-10-09 21:34:23.244;UPset: [0, 1, 2, 3, 4];
-decision_yes;2015-10-09 21:34:25.249;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-uncertain;2015-10-09 21:34:25.253;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-commitable;2015-10-09 21:34:27.259;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-commit;2015-10-09 21:34:29.269;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-commit;2015-10-09 21:34:49.327;;add;SongA;http://SongA.mysongs.com/;;UPset :[1, 2, 3, 4];
+idle;2015-10-09 21:47:34.751;UPset: [0, 1, 2, 3, 4];
+decision_yes;2015-10-09 21:47:34.957;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+uncertain;2015-10-09 21:47:34.961;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+commitable;2015-10-09 21:47:35.064;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+commit;2015-10-09 21:47:35.166;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+commit;2015-10-09 21:47:37.415;;add;SongA;http://SongA.mysongs.com/;;UPset :[1, 2, 3, 4];
