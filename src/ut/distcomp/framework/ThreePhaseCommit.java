@@ -194,7 +194,6 @@ public class ThreePhaseCommit {
 		String classpath = System.getProperty("java.class.path");
 		System.out.println("3PC Controller: Reviving process p"+procID);
 		ProcessBuilder pb = new ProcessBuilder("java","-cp",classpath,"ut.distcomp.framework.Node","config"+procID+".txt","DTLog"+procID+".txt", "revive");
-		//TODO: pb.redirectInput();
 		pb.redirectOutput(Redirect.INHERIT);
 		pb.redirectError(Redirect.INHERIT);
 		try {
