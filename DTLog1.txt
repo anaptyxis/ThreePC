@@ -1,5 +1,7 @@
-idle;2015-10-09 20:55:51.313;UPset: [0, 1, 2, 3, 4];
-decision_yes;2015-10-09 20:55:53.327;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-uncertain;2015-10-09 20:55:53.327;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-wait_for_recover_rep;2015-10-09 20:56:21.295;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-commit;2015-10-09 20:56:22.3;;add;SongA;http://SongA.mysongs.com/;; UPset :[0, 1, 2, 3, 4];
+idle;2015-10-09 21:34:23.241;UPset: [0, 1, 2, 3, 4];
+decision_yes;2015-10-09 21:34:25.255;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+uncertain;2015-10-09 21:34:25.255;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+commitable;2015-10-09 21:34:27.259;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+commit;2015-10-09 21:34:29.269;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+wait_for_state_res;2015-10-09 21:34:46.327;;add;SongA;http://SongA.mysongs.com/;;UPset :[1, 2, 3, 4];
+commit;2015-10-09 21:34:48.337;;add;SongA;http://SongA.mysongs.com/;;UPset :[1, 2, 3, 4];

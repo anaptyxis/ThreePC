@@ -671,11 +671,15 @@ public class Node {
         	   }
         	   // the coordinator is still working
         	   else{
-        		   coordinator = Integer.parseInt(parser.getSourceInfo());
-        		   for(int j : upSet){
-        			   if(j<coordinator)
-        				   upSet.remove(j);
-        		   }
+        		   
+        		   Iterator<Integer> iterator = upSet.iterator();
+             	     while (iterator.hasNext()) {
+             	       Integer element = iterator.next();
+             	       if (element < coordinator) {
+             	          iterator.remove();
+             	       }
+             	   }
+             	   sendParticipantState(myState, parser);
         	   }
         }
         
@@ -1134,8 +1138,8 @@ public class Node {
                 oldDecisionList.add(currentAction);
              }
              else if (!atLeastOneBoolean){
-            	 System.out.println("I am Here "+ Integer.toString(myID));
-            	 myState = StateAC.IDLE;
+            	 //System.out.println("I am Here "+ Integer.toString(myID));
+            	 //myState = StateAC.IDLE;
             	 break;
              }
              
@@ -1242,8 +1246,8 @@ public class Node {
               }
               
               else if (!atleastone){
-            	 System.out.println("I am Here "+ Integer.toString(myID));
-             	 myState = StateAC.IDLE;
+            	 //System.out.println("I am Here "+ Integer.toString(myID));
+             	 //myState = StateAC.IDLE;
              	 break;
               }
              
@@ -1265,6 +1269,12 @@ public class Node {
 	        TransitionMsg termination_decision = null;
 	        if(list.isEmpty()) {
 	           System.out.println("there is a empty set for termination rule");
+	           switch(myState) {
+               case ABORT:
+               case UNCERTAIN: termination_decision = TransitionMsg.ABORT; break;
+               case COMMIT:
+               case COMMITABLE: termination_decision = TransitionMsg.COMMIT;    break;
+           }
 	        } else {
 	            int count_commitable = 0;
 	            int count_uncertain = 0;
@@ -1408,6 +1418,7 @@ public class Node {
 	  }
 	  
 	  public void sendMsg(int procID, String msg) {
+		  //if(myID==0)
 		    //System.out.println(myID+" msgCount:"+msgCount+"; msgBound:"+msgBound);
 		    
 		  	if (msgCount >= msgBound) {			//no messages sent until bound adjusted
