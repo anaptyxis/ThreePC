@@ -122,6 +122,12 @@ public class ThreePhaseCommit {
 			if (strArr[0].equals("add")) {
 				sendAdd(strArr[1],strArr[2]);												
 			}
+			if (strArr[0].equals("edit")) {
+				sendEdit(strArr[1],strArr[2],strArr[3]);												
+			}
+			if (strArr[0].equals("remove")) {
+				sendRemove(strArr[1]);												
+			}
 			if (strArr[0].equals("wait")) {
 				int arg = Integer.parseInt(strArr[1]);
 				try {
@@ -288,6 +294,34 @@ public class ThreePhaseCommit {
 			procOutList.get(procID).flush();
 		} catch (IOException e) {
 			System.err.println("3PC: Error writing 'add' to process p"+procID);
+			e.printStackTrace();
+		}
+
+	}
+
+	public void sendEdit(String n1, String n2, String u) {
+		 
+		int procID = coordinatorID;
+		try {
+			System.out.println("3PC: Sending edit to p"+procID);
+			procOutList.get(procID).write("edit "+n1+" "+n2+" "+u+"\n");
+			procOutList.get(procID).flush();
+		} catch (IOException e) {
+			System.err.println("3PC: Error writing 'edit' to process p"+procID);
+			e.printStackTrace();
+		}
+
+	}
+
+	public void sendRemove(String n) {
+		 
+		int procID = coordinatorID;
+		try {
+			System.out.println("3PC: Sending remove to p"+procID);
+			procOutList.get(procID).write("remove "+n+"\n");
+			procOutList.get(procID).flush();
+		} catch (IOException e) {
+			System.err.println("3PC: Error writing 'remove' to process p"+procID);
 			e.printStackTrace();
 		}
 
