@@ -277,7 +277,7 @@ public class ThreePhaseCommit {
 	public void rejectNextChange(int procID) {
 		 
 		try {
-			System.out.println("3PC: Sending rejectNextChanse to p"+procID);
+			System.out.println("3PC: Sending rejectNextChange to p"+procID);
 			procOutList.get(procID).write("rejectNextChange"+"\n");
 			procOutList.get(procID).flush();
 		} catch (IOException e) {
