@@ -150,7 +150,7 @@ public class MessageParser {
         return result;
     }
 
-    public void setSource(String source) {
+    public void setSourceinfo(String source) {
         this.source = source;
     }
 
@@ -161,7 +161,7 @@ public class MessageParser {
     public void setStateInfo(StateAC state) {
 		this.stateinfo = state.toString();
 	}
-    public String getSource(){
+    public String getSourceInfo(){
         return source;
     }
     public String getInstruction(){
