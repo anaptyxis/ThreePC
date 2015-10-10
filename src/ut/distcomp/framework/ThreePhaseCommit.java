@@ -264,18 +264,20 @@ public class ThreePhaseCommit {
 					e.printStackTrace();
 				}
 		}
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		int i = 0;
+		while ( i++ < 10 )
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		
 	}
 
 	public void rejectNextChange(int procID) {
 		 
 		try {
-			System.out.println("3PC: Sending rejectNextChanse to p"+procID);
+			System.out.println("3PC: Sending rejectNextChange to p"+procID);
 			procOutList.get(procID).write("rejectNextChange"+"\n");
 			procOutList.get(procID).flush();
 		} catch (IOException e) {
