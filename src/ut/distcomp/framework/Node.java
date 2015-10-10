@@ -1204,7 +1204,7 @@ public class Node {
                 		   }
                 	   }
                 	   else{
-                		   System.out.println("Receive message :  "+ messages);
+                		   System.out.println("p"+myID+" received message :  "+ messages);
                 		   processReceivedMsgAsParticipant(m);
                 		  
                 	   }
