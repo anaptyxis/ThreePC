@@ -217,7 +217,7 @@ public class Node {
 					if (strArr[0].equals("edit"))
 						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + "," + strArr[2] + ";" + strArr[3] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 					if (strArr[0].equals("remove"))
-						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + strArr[2] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
+						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 					System.out.println(line);
 				}
 			} while (line != null); 						
