@@ -1,7 +1,5 @@
-idle;2015-10-09 23:33:38.526;UPset: [0, 1, 2, 3, 4];
-start;2015-10-09 23:33:39.531;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-decision_yes;2015-10-09 23:33:39.541;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-wait_for_vote_dec;2015-10-09 23:33:39.541;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-wait_for_recover_rep;2015-10-09 23:34:11.485;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-wait_for_recover_rep;2015-10-09 23:34:22.528;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-abort;2015-10-09 23:34:28.559;;add;SongA;http://SongA.mysongs.com/;; UPset :[0, 1, 2, 3, 4];
+idle;2015-10-09 23:51:07.555;UPset: [0, 1, 2, 3, 4];
+start;2015-10-09 23:51:08.561;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+decision_yes;2015-10-09 23:51:08.571;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+wait_for_vote_dec;2015-10-09 23:51:08.571;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+wait_for_acks;2015-10-09 23:51:09.574;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];

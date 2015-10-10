@@ -1015,7 +1015,11 @@ public class Node {
             	 TransitionMsg header = terminationRule(myState, stateReqList);
            	  	 System.out.println("The decision made on collection is " + header.toString());
            	  	 MessageParser actionMessageParser = new MessageParser();
-           	  	 actionMessageParser =stateReqList.get(1);
+           	  	 if(!stateReqList.isEmpty())
+           	  	    actionMessageParser =stateReqList.get(0);
+           	  	 else
+           	  		actionMessageParser = currentAction;
+           	  		 
            	  	 //DEUBG
            	  	 /*
            	  	 for(MessageParser i : stateReqList){
@@ -1023,7 +1027,11 @@ public class Node {
            	  	 }
            	  	 */
            	  	 //actionMessageParser.setMessageHeader(header.toString());
-           	  	 upSet = stateReqList.get(1).getUpSet();
+           	  	 if(!stateReqList.isEmpty())
+           	  		 upSet = stateReqList.get(0).getUpSet();
+           	  	 else {
+           	  		 upSet = currentAction.getUpSet();
+				}
            	  	 // if decision is Abort
            	  	 if(header == TransitionMsg.ABORT){
            	  		 //actionMessageParser.setSourceinfo(Integer.toString(myID));
@@ -1038,9 +1046,14 @@ public class Node {
            	  		 }
            	  		 
            	  		 myState  = StateAC.ABORT;
-           	  		 dtLog.writeEntry(myState, stateReqList.get(1).getTransaction()+";"+"UPset :"+upSet);
-           	  		 oldDecisionListAbort.add(stateReqList.get(1));
-           	  		 System.out.println("The abort list is" + oldDecisionListAbort);
+           	  		 if(!stateReqList.isEmpty()){
+           	  			 dtLog.writeEntry(myState, stateReqList.get(1).getTransaction()+";"+"UPset :"+upSet);
+           	  			 oldDecisionListAbort.add(stateReqList.get(1));
+           	  			 System.out.println("The abort list is" + oldDecisionListAbort);
+           	  		 }else{
+           	  			 dtLog.writeEntry(myState, currentAction.getTransaction()+";"+"UPset :"+upSet);
+           	  			 oldDecisionListAbort.add(currentAction);
+           	  		 }
            	  	 }   
            	  	
            	  	 // if the decision is Commit 

@@ -1,5 +1,4 @@
-idle;2015-10-09 23:33:38.522;UPset: [0, 1, 2, 3, 4];
-decision_yes;2015-10-09 23:33:40.537;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-uncertain;2015-10-09 23:33:40.537;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
-wait_for_state_res;2015-10-09 23:34:01.591;;add;SongA;http://SongA.mysongs.com/;;UPset :[1, 2, 3, 4];
-abort;2015-10-09 23:34:03.595;;add;SongA;http://SongA.mysongs.com/;;UPset :[1, 2, 3, 4];
+idle;2015-10-09 23:51:07.545;UPset: [0, 1, 2, 3, 4];
+decision_yes;2015-10-09 23:51:09.552;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+uncertain;2015-10-09 23:51:09.552;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
+commitable;2015-10-09 23:51:10.554;;add;SongA;http://SongA.mysongs.com/;;UPset :[0, 1, 2, 3, 4];
