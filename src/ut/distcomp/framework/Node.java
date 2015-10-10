@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.CookieHandler;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,9 +14,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
-import java.util.Scanner;
-
 
 /**
  * Node
@@ -89,7 +85,7 @@ public class Node {
 		messageQueue = new LinkedList<MessageParser>();
 		// not the revival case
 		if(!revival){
-			System.out.print("I am fresh process");
+			System.out.print("Starting p"+myID+" as a fresh process.");
 			viewNumber = config.numProcesses;
       
 			for(int i = 0 ; i < viewNumber; i++){
@@ -108,7 +104,7 @@ public class Node {
 			dtLog.writeEntry(myState, "UPset: "+ upSet);
 			oldDecisionList = new ArrayList<MessageParser>();
 		}else{
-			//System.out.print("I am recover process "+Integer.toString(myID)+"  "+ "DTLog"+Integer.toString(myID)+EXTENSION);
+			//System.out.print("I am recovering process p"+Integer.toString(myID)+"  "+ "DTLog"+Integer.toString(myID)+EXTENSION);
 			recover = new Recovery("DTLog"+Integer.toString(myID)+EXTENSION);
 			recover.parseLogFile();
 			recover.makeDecision();
@@ -120,7 +116,7 @@ public class Node {
 			pending = recover.getPendingInfo();
 			recoveryUpSets = new ArrayList<HashSet<Integer>>();
 			//====DEBUG=========
-			System.out.println("last state is "+recover.getLastState().toString()+
+			System.out.println("My last state is "+recover.getLastState().toString()+
           "  I am need to ask others is " + recover.DoAskOthers() +" and the upset is  "
           +upSet);
         
@@ -218,7 +214,7 @@ public class Node {
 						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + "," + strArr[2] + ";" + strArr[3] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 					if (strArr[0].equals("remove"))
 						ActionList.add(new MessageParser( Integer.toString(myID) + ";" + strArr[0] + ";" + strArr[1] + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
-					System.out.println(line);
+					System.out.println("User initiated action: "+line);
 				}
 			} while (line != null); 						
 			actionListReader.close();
@@ -241,14 +237,14 @@ public class Node {
         MessageParser parser = new MessageParser(message);
         // start 3 PC
         if (parser.getMessageHeader().toString().equals(TransitionMsg.CHANGE_REQ.toString())){
-        	System.out.println("I receive change request");
+        	System.out.println("I haved received a change request");
         	myState = StateAC.START_3PC;
         	dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
         	parser.setMessageHeader(TransitionMsg.VOTE_REQ.toString());
         	parser.setUpSet(upSet);
         		for(int i : upSet){
         			if(i!=coordinator){
-                        System.out.println("send vote request to " + parser.composeMessage());
+                        System.out.println("Send vote request to " + parser.composeMessage());
         				sendMsg(i, parser.composeWithUpset() );
         			}
         		}
@@ -286,7 +282,7 @@ public class Node {
                  
                  parser.setUpSet(upSet);
                  sendMsg(j, parser.composeWithUpset());
-                 System.out.println("I am helping others to revive"); 
+                 System.out.println("I am helping others to revive."); 
                }
             }
         	
@@ -733,7 +729,7 @@ public class Node {
         			 dtLog.writeEntry(myState, recover.getDecisionList().get(recover.getDecisionList().size()-1).getTransaction()+"; UPset :"+ upSet);
         			 oldDecisionList.add(recover.getDecisionList().get(recover.getDecisionList().size()-1));
         			 TotalFailure = false;
-        			 System.out.println("I am resove the total failure");
+        			 System.out.println("I am resolving the total failure.");
         		 } else {
         			 upSet = Rset;
         			 myState = StateAC.ABORT;
@@ -752,11 +748,11 @@ public class Node {
         //Receive UR_ELECTED message, I am new coordinator now
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.UR_ELECTED.toString())){
-        	    System.out.println("Hahaha I am "+ Integer.toString(myID) + "new leader");
+        	    System.out.println("Hahaha I am p"+ Integer.toString(myID) + ", the new leader");
         	    coordinatorWorking = true;
         	    //I am new Coordinator
         	    if(myID != coordinator) 
-        	    	System.out.println("Seems something wrong happens, sinces I am not the coordinator");
+        	    	System.out.println("Seems something wrong has happened, since I am not the coordinator.");
         	    // update the UP set
         	    upSet = parser.getUpSet();
         	    //System.out.println("my new UP set is " + upSet);
@@ -1172,7 +1168,7 @@ public class Node {
               
               // wait for commit message from coordinator
               else if(!atleastone && myState==StateAC.COMMITABLE){
-            	  	  System.out.println("Participant wait for Coordinator's Commit");
+            	  	  System.out.println("Participant waits for Coordinator's Commit");
             	  	  coordinatorWorking=false;
             	  	  upSet.remove(coordinator);
             	  	  currentAction.setUpSet(upSet);
@@ -1184,7 +1180,7 @@ public class Node {
              // wait for recovery response from others
              // if there is no response until timeout, then total failure is happend
               else if(!atleastone && myState==StateAC.WAIT_FOR_RECOVER_REP){
-            	     System.out.println("Seems total failure happens");
+            	     System.out.println("Seems a total failure has happened.");
         	  	     TotalFailure = true;
         	  	     coordinatorWorking=false;
         	  	     askOtherForHelp(recover.getPendingDecision());
@@ -1337,7 +1333,7 @@ public class Node {
         for(Integer i: upSet) {
             if(config.procNum == i.intValue())
                 continue;
-            System.out.println("I am send state request " + Integer.toString(i) );
+            System.out.println("I am sending state request " + Integer.toString(i) );
             sendMsg(i.intValue(), request);
         }
 	  }

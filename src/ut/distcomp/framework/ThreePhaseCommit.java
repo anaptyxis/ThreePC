@@ -119,14 +119,6 @@ public class ThreePhaseCommit {
 				int arg = Integer.parseInt(strArr[1]);
 				rejectNextChange(arg);												
 			}
-			if (strArr[0].equals("change")) {
-				int arg = Integer.parseInt(strArr[1]);
-																
-			}
-			if (strArr[0].equals("add")) {
-				int arg = Integer.parseInt(strArr[1]);
-																
-			}
 			if (strArr[0].equals("wait")) {
 				int arg = Integer.parseInt(strArr[1]);
 				try {
