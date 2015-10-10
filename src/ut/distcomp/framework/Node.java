@@ -140,7 +140,6 @@ public class Node {
   
   private void askOtherForHelp(MessageParser parser){
       parser.setMessageHeader(TransitionMsg.RECOVER_REQ.toString());
-      parser.setSourceinfo(Integer.toString(myID));
       parser.setUpSet(upSet);
       // send everyone who is alive, just in my opnion
       for (int m : upSet){
@@ -923,6 +922,16 @@ public class Node {
 					//stuff
 				if (strArr[0].equals("rejectNextChange"))
 					voteNo = true;
+				if (strArr[0].equals("add")) {
+					addRcv(strArr[1],strArr[2]);
+				}
+				if (strArr[0].equals("edit")) {
+					editRcv(strArr[1],strArr[2],strArr[3]);
+				}
+				if (strArr[0].equals("remove")) {
+					removeRcv(strArr[1]);
+				}
+					
 			 }
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
@@ -932,6 +941,18 @@ public class Node {
 		
 	}
 	
+	public void addRcv(String n, String u) {
+		sendMsg(coordinator,(new MessageParser( Integer.toString(myID) + ";" + "add" + ";" + n + ";" + u + ";"+ StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()).composeMessage()));
+	}
+
+	public void editRcv(String n1, String n2, String u) {
+		sendMsg(coordinator,(new MessageParser( Integer.toString(myID) + ";" + "edit" + ";" + n1 + ";" + n2 + ";" + u + ";"+ StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()).composeMessage()));
+	}
+
+	public void removeRcv(String n) {
+		sendMsg(coordinator,(new MessageParser( Integer.toString(myID) + ";" + "remove" + ";" + n + ";" + StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()).composeMessage()));
+	}
+
 	/*
 	 * Get message using polling when there is no failure
 	 */
