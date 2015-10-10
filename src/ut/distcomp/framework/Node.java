@@ -140,7 +140,6 @@ public class Node {
   
   private void askOtherForHelp(MessageParser parser){
       parser.setMessageHeader(TransitionMsg.RECOVER_REQ.toString());
-      parser.setSourceinfo(Integer.toString(myID));
       parser.setUpSet(upSet);
       // send everyone who is alive, just in my opnion
       for (int m : upSet){
@@ -919,6 +918,10 @@ public class Node {
 					//stuff
 				if (strArr[0].equals("rejectNextChange"))
 					voteNo = true;
+				if (strArr[0].equals("add")) {
+					addRcv(strArr[1],strArr[2]);
+				}
+					
 			 }
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
@@ -926,6 +929,10 @@ public class Node {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	public void addRcv(String n, String u) {
+		ActionList.add(new MessageParser( Integer.toString(myID) + ";" + "add" + ";" + n + ";" + u + ";"+ StateAC.IDLE.toString()+";"+TransitionMsg.CHANGE_REQ.toString()));
 	}
 	
 	/*
