@@ -8,10 +8,41 @@ ID: tz3272
 Name: Bradley Beth
 ID: bethbg
 
-====================================================================================
-Mistake in reading
+==============================================================================
+README
+==============================================================================
+ThreePhaseCommit is a java-based controller that takes in 1 argument—a file 
+containing the controller script (e.g., script1.txt).
 
-The mistake is we do need to log the precommit.
+The allowable commands are:
+      • createProcesses NUM_PROCESSES
+      • kill PROCESS_ID
+      • killAll
+      • killLeader
+      • revive PROCESS_ID
+      • reviveLast
+      • reviveAll
+      • partialMessage PROCESS_ID NUM_MSGS
+      • resumeMessages PROCESS_ID
+      • allClear
+      • rejectNextChange PROCESS_ID
+      • add SONG_TITLE SONG_URL
+      • edit SONG_TITLE NEW_SONG_TITLE NEW_SONG_URL
+      • remove SONG_TITLE 
+      • wait
+
+The Node class contains the code for each process. These processes are created
+by ThreePhaseCommit using ProcessBuilder. Each requires arguments specifying 
+a configuration filename, a DT-Log filename, and {new|revive}—in that order.
+
+add, edit, and remove commands may also be batched by placing them in the file
+ActionList.txt.
+ 
+==============================================================================
+Mistake in reading
+==============================================================================
+
+The mistake is that we *do* need to log the precommit.
 
 
 Without logging precommit :
