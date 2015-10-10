@@ -264,11 +264,13 @@ public class ThreePhaseCommit {
 					e.printStackTrace();
 				}
 		}
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		int i = 0;
+		while ( i++ < 10 )
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		
 	}
 
