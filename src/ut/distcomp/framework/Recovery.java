@@ -164,9 +164,14 @@ public class Recovery {
 			}
 			
 			//There is no pending decision
-			else{
-				askOthers = true;
-				whatIdo = "ask";
+			else  if(lastState == StateAC.COMMIT){
+				askOthers = false;
+				whatIdo = "commit";
+			}
+			
+			else if(lastState == StateAC.ABORT){
+				askOthers = false;
+				whatIdo = "abort";
 			}
 		}
 		

@@ -116,6 +116,7 @@ public class Node {
 			myState = recover.getLastState();
 			pending = recover.getPendingInfo();
 			recoveryUpSets = new ArrayList<HashSet<Integer>>();
+			TotalFailure = false;
 			//====DEBUG=========
 			System.out.println("last state is "+recover.getLastState().toString()+
           "  I am need to ask others is " + recover.DoAskOthers() +" and the upset is  "
@@ -140,6 +141,7 @@ public class Node {
   
   private void askOtherForHelp(MessageParser parser){
       parser.setMessageHeader(TransitionMsg.RECOVER_REQ.toString());
+      parser.setSourceinfo(Integer.toString(myID));
       parser.setUpSet(upSet);
       // send everyone who is alive, just in my opnion
       for (int m : upSet){
@@ -233,7 +235,7 @@ public class Node {
     /*
     * Process received message as coordinator
     */
-    private void processReceivedMsgAscoordinator(String message){
+    private void processReceivedMsgAscoordinator(String message) throws InterruptedException{
         MessageParser parser = new MessageParser(message);
         // start 3 PC
         if (parser.getMessageHeader().toString().equals(TransitionMsg.CHANGE_REQ.toString())){
@@ -282,8 +284,9 @@ public class Node {
                  parser.setStateInfo(StateAC.COMMIT);
                  parser.setSourceinfo(Integer.toString(myID));
                  parser.setUpSet(upSet);
+                 Thread.sleep(getTimeOut()/2);
                  sendMsg(j, parser.composeWithUpset());
-                 System.out.println("I am helping others to revive"); 
+                 
                }
             }
         	
@@ -297,8 +300,9 @@ public class Node {
                   parser.setStateInfo(StateAC.ABORT);
                   parser.setUpSet(upSet);
                   parser.setSourceinfo(Integer.toString(myID));
+                  Thread.sleep(getTimeOut()/2);
                   sendMsg(j, parser.composeWithUpset());
-                  System.out.println("I am helping others to revive abort" + Integer.toString(j)); 
+                  System.out.println("I am helping others to revive abort" + Integer.toString(j) +" " + parser.composeMessage()); 
                 }
             }
         	
@@ -688,7 +692,7 @@ public class Node {
         	boolean ableToResponse = false; 
         	
         	 upSet.add(Integer.parseInt(parser.getSourceInfo()));
-        	 System.out.println("old decision list commit " + oldDecisionList);
+        	 //System.out.println("old decision list commit " + oldDecisionList);
         	 for(MessageParser msgParser : oldDecisionList){
                if(isSameAction(parser, msgParser)){
             	 ableToResponse = true;
@@ -697,11 +701,14 @@ public class Node {
                  parser.setStateInfo(StateAC.COMMIT);
                  parser.setSourceinfo(Integer.toString(myID));
                  parser.setUpSet(upSet);
+                 Thread.sleep(getTimeOut()/2);
                  sendMsg(j, parser.composeWithUpset());
-                 System.out.println("I am helping others to revive commit" + Integer.toString(j)); 
+                 System.out.println("I am helping others to revive commit" + Integer.toString(j)+ " " + parser.composeMessage()); 
                }
+        	 }
                //System.out.println("old decision list abort " + oldDecisionListAbort);
                //System.out.println("the abort list" + oldDecisionListAbort.get(0).composeMessage());
+               
                for(MessageParser msg : oldDecisionListAbort){
                    if(isSameAction(parser, msg)){
                 	 ableToResponse = true;
@@ -710,12 +717,15 @@ public class Node {
                      parser.setStateInfo(StateAC.ABORT);
                      parser.setUpSet(upSet);
                      parser.setSourceinfo(Integer.toString(myID));
+                     Thread.sleep(getTimeOut()/2);
                      sendMsg(j, parser.composeWithUpset());
-                     System.out.println("I am helping others to revive abort" + Integer.toString(j)); 
+                     
+                     System.out.println("I am helping others to revive abort" + Integer.toString(j)+" " + parser.composeMessage()); 
                    }
                }
-            }
-        	
+               
+            
+        	//System.out.println("I am Here");
         	//dtLog.writeEntry(myState, transaction)
         	
         	// Not able to response
@@ -728,7 +738,8 @@ public class Node {
 
         else if (parser.getMessageHeader().toString().equals(TransitionMsg.RECOVER_REP.toString())){
          
-            
+          System.out.println("I receve revive response, and Total is "  + TotalFailure + " and pending is " + pending);
+          System.out.println("What I receive is " + parser.composeMessage());
          // If there is not total failure
          if(!TotalFailure){
         	 if(pending ){    
@@ -750,7 +761,7 @@ public class Node {
                 recoveryUpSets.clear();
              }
          }else{
-        	 System.out.println("Total Failure");
+        	 //System.out.println("Total Failure");
         	 boolean lastProces = false;
         	 HashSet<Integer> unionHashSet = new HashSet<Integer>();
              
@@ -958,7 +969,7 @@ public class Node {
 	 */
 	
 	private void getMessageAsCoordinator() throws InterruptedException{
-		System.out.println("Function call "+ Integer.toString(myID)); 
+		//System.out.println("Function call "+ Integer.toString(myID)); 
 		while(true){
 			 
 			 //first check to see if any incoming messages from controller
@@ -981,7 +992,7 @@ public class Node {
                 	atLeastOneBoolean = true;
                 	currentAction = new MessageParser(m);
                 	if(currentAction.getMessageHeader().equals(TransitionMsg.STATE_RES.toString())){
-                		System.out.println("The message receive is " + currentAction.composeMessage());
+                		//System.out.println("The message receive is " + currentAction.composeMessage());
                 		tmp2.add(Integer.parseInt(currentAction.getSourceInfo()));
                 		stateReqList.add(currentAction);
                 	}
@@ -1173,7 +1184,8 @@ public class Node {
 	 * 
 	 */
 	 private void getMessagesAsParticipant() throws InterruptedException {
-		//  System.out.println("Function call "+ Integer.toString(myID));
+		  //if(myID == 0)
+		  //System.out.println("Function call "+ Integer.toString(myID));
           while(true){
 
   			 //first check to see if any incoming messages from controller
@@ -1188,7 +1200,10 @@ public class Node {
               while(System.currentTimeMillis() < startTime) {
                   Thread.sleep(smallTimeout);
                   messages = (nc.getReceivedMsgs());
-                  //System.out.println("Receive message :  "+ messages);
+                  if(myID==0){
+                	  System.out.println("start receiving");
+                	  System.out.println("Receive message :  "+ messages);
+                  }
                   for(String m :messages) {
                 	   atleastone = true;
                 	   currentAction = new MessageParser(m);
@@ -1204,7 +1219,9 @@ public class Node {
                 		   }
                 	   }
                 	   else{
-                		   System.out.println("Receive message :  "+ messages);
+                		  
+                		   //System.out.println("Receive message :  "+ messages);
+                		   
                 		   processReceivedMsgAsParticipant(m);
                 		  
                 	   }
@@ -1259,7 +1276,7 @@ public class Node {
              // if there is no response until timeout, then total failure is happend
               else if(!atleastone && myState==StateAC.WAIT_FOR_RECOVER_REP){
             	     System.out.println("Seems total failure happens");
-        	  	     TotalFailure = true;
+        	  	    // TotalFailure = true;
         	  	     coordinatorWorking=false;
         	  	     askOtherForHelp(recover.getPendingDecision());
             	  	  
@@ -1484,7 +1501,9 @@ public class Node {
 	   
 			// revival start
 			if(revival){
+				//System.out.println("start receive from revive");
 				n.getMessagesAsParticipant();
+				
 			}else{
 				// fresh start
 				n.readActions("ActionList.txt");
