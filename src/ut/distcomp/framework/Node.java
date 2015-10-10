@@ -58,8 +58,6 @@ public class Node {
 		//if dtLog is not empty, then failure has occurred and this is 
 		//a revival. We need to put a handler in to bring the process 
 		//back up. Otherwise, the process/Node is constructed from scratch.
-		// TODO: validate that DTLog is not destructively opened on
-		//		 revival.
 		
 		try {
 			config = new Config(configName);
