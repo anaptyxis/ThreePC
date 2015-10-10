@@ -1,8 +1,7 @@
 createProcesses 5
-rejectNextChange 2
-allClear
-kill 0
-wait 15
-revive 0
-wait 20
+wait 4
+kill 1
+wait 26
+revive 1
+wait 10
 killAll
