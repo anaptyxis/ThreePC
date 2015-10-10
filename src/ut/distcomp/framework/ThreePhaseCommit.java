@@ -119,6 +119,9 @@ public class ThreePhaseCommit {
 				int arg = Integer.parseInt(strArr[1]);
 				rejectNextChange(arg);												
 			}
+			if (strArr[0].equals("add")) {
+				sendAdd(strArr[1],strArr[2]);												
+			}
 			if (strArr[0].equals("wait")) {
 				int arg = Integer.parseInt(strArr[1]);
 				try {
@@ -271,6 +274,20 @@ public class ThreePhaseCommit {
 			procOutList.get(procID).flush();
 		} catch (IOException e) {
 			System.err.println("3PC: Error writing 'rejectNextChange' to process p"+procID);
+			e.printStackTrace();
+		}
+
+	}
+
+	public void sendAdd(String n, String u) {
+		 
+		int procID = coordinatorID;
+		try {
+			System.out.println("3PC: Sending add to p"+procID);
+			procOutList.get(procID).write("add "+n+" "+u+"\n");
+			procOutList.get(procID).flush();
+		} catch (IOException e) {
+			System.err.println("3PC: Error writing 'add' to process p"+procID);
 			e.printStackTrace();
 		}
 
