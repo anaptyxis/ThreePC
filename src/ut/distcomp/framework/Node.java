@@ -1078,19 +1078,21 @@ public class Node {
            		   boolean isUncertain = false;
            		   
            		   // Sent every uncertain case a Precommit info
+                 
            		   for(MessageParser tmp : stateReqList){
-      	  			 if(tmp.getStateInfo() == StateAC.UNCERTAIN ){
-      	  				 int j = Integer.parseInt(tmp.getSourceInfo());
-      	  				 tmp.setSourceinfo(Integer.toString(myID));
+      	  			   if(tmp.getStateInfo() == StateAC.UNCERTAIN || tmp.getStateInfo() == StateAC.COMMITABLE ){
+      	  				   int j = Integer.parseInt(tmp.getSourceInfo());
+                    
+      	  				   tmp.setSourceinfo(Integer.toString(myID));
           	  			 tmp.setMessageHeader(header.toString());
-      	  				 if(j!=myID){
-      	  					 sendMsg(j, tmp.composeWithUpset());
-      	  					 System.out.println("Re issue precommit"+ tmp.composeMessage());
-      	  					 isUncertain = true;
-      	  				}
-      	  			 }
+      	  				   if(j!=myID){
+      	  					   sendMsg(j, tmp.composeWithUpset());
+      	  					   System.out.println("Re issue precommit"+ " "+ tmp.composeMessage());
+      	  					   isUncertain = true;
+      	  				   }
+      	  			  }
            		   }
-      	  		 
+               myState = StateAC.WAIT_FOR_ACKS;
       	  		  // Corner case, if everyone is commitable, send commit
       	  		  if(!isUncertain){
       	  			
@@ -1100,9 +1102,9 @@ public class Node {
       	  				 	int j = Integer.parseInt(tmp.getSourceInfo());
       	  				 	if(j!=myID){
       	  				 	    tmp.setSourceinfo(Integer.toString(myID));
-              	  			    tmp.setMessageHeader(StateAC.COMMIT.toString());
-      	  				 		System.out.println("Re issue commit to "+ Integer.toString(j));
-      	  				 		sendMsg(j, tmp.composeWithUpset());      	
+              	  			tmp.setMessageHeader(StateAC.COMMIT.toString());
+      	  				 		  System.out.println("Re issue commit to "+ Integer.toString(j));
+      	  				 		  sendMsg(j, tmp.composeWithUpset());      	
       	  				 	}
       	  				 }
       	  			 }
@@ -1431,7 +1433,7 @@ public class Node {
 	        String stateResponse = stResponse.composeWithUpset();
 
 	        sendMsg(Integer.valueOf(senderProcNum), stateResponse);
-	        
+	        System.out.println("i am process "+ Integer.toString(myID) + " sending state to leader");
 	        return;
 	    }
 	
