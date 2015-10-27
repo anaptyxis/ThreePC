@@ -52,7 +52,7 @@ public class Node {
 	private ArrayList<String> haltedMessages;
 	private boolean voteNo;
 	private HashSet<Integer> Rset = new HashSet<Integer>();
-	
+	private StateAC transitionStateAC = null;
 	
 	public Node(String configName, String dtL, boolean revival) {
 		//if dtLog is not empty, then failure has occurred and this is 
@@ -817,10 +817,11 @@ public class Node {
         	    sendStateReq(parser);
         	    
         	    // change my state and DT log that
-        	    
+        	    transitionStateAC = myState;
         	    myState = StateAC.WAIT_FOR_STATE_RES;
         	    dtLog.writeEntry(myState, parser.getTransaction()+";"+ "UPset :" + upSet);
         	    //And now I am new Coordinator
+        	    
         	    getMessageAsCoordinator();
         }
         
@@ -1012,7 +1013,7 @@ public class Node {
              // if there is message coming, and the message is about the state response
              if(collectAllStateBoolean && myState==StateAC.WAIT_FOR_STATE_RES){
             	 System.out.println("Able to run termination protocol ");
-            	 TransitionMsg header = terminationRule(myState, stateReqList);
+            	 TransitionMsg header = terminationRule(transitionStateAC, stateReqList);
            	  	 System.out.println("The decision made on collection is " + header.toString());
            	  	 MessageParser actionMessageParser = new MessageParser();
            	  	 if(!stateReqList.isEmpty())
@@ -1093,6 +1094,7 @@ public class Node {
       	  			  }
            		   }
                myState = StateAC.WAIT_FOR_ACKS;
+               //dtLog.writeEntry(myState, actionMessageParser.getTransaction()+";"+"UPset :"+upSet);
       	  		  // Corner case, if everyone is commitable, send commit
       	  		  if(!isUncertain){
       	  			
@@ -1320,7 +1322,8 @@ public class Node {
 	 private TransitionMsg terminationRule(StateAC myState, List<MessageParser> list ) {
 			
 			System.out.println("start termination rule");
-			//System.out.println("What I receive is " + list);
+			
+			System.out.println("What I receive is " + myState.toString());
 	        TransitionMsg termination_decision = null;
 	        if(list.isEmpty()) {
 	           System.out.println("there is a empty set for termination rule");
@@ -1329,13 +1332,15 @@ public class Node {
                case UNCERTAIN: termination_decision = TransitionMsg.ABORT; break;
                case COMMIT:
                case COMMITABLE: termination_decision = TransitionMsg.COMMIT;    break;
+			default:
+				break;
            }
 	        } else {
 	            int count_commitable = 0;
 	            int count_uncertain = 0;
 	            boolean commit_flag = false;
 	            boolean abort_flag = false;
-
+	           
 	            for(MessageParser item:list) {
 	            	
 	            	//System.out.println("The state is ");
@@ -1372,7 +1377,7 @@ public class Node {
 	                termination_decision = TransitionMsg.ABORT;
 	            } else if(commit_flag) {
 	                termination_decision = TransitionMsg.COMMIT;
-	            } else if(count_uncertain == list.size() ) {
+	            } else if(count_uncertain == list.size()+1) {
 	                termination_decision = TransitionMsg.ABORT;
 	            } else if(count_commitable > 0) {
 	                termination_decision = TransitionMsg.PRECOMMIT;
