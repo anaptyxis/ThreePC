@@ -122,7 +122,12 @@ public class Node {
         
 			if(recover.DoAskOthers()){
 				// ask others to get infomation
-				askOtherForHelp(recover.getPendingDecision());
+				try {
+					askOtherForHelp(recover.getPendingDecision());
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}else{
 				if(recover.getWhatIdo().equals("abort")){
 					myState = StateAC.ABORT;
@@ -137,7 +142,7 @@ public class Node {
    * 
    */
   
-  private void askOtherForHelp(MessageParser parser){
+  private void askOtherForHelp(MessageParser parser) throws InterruptedException{
       parser.setMessageHeader(TransitionMsg.RECOVER_REQ.toString());
       parser.setSourceinfo(Integer.toString(myID));
       parser.setUpSet(upSet);
@@ -145,13 +150,13 @@ public class Node {
       for (int m : upSet){
         if(m!=myID){
           sendMsg(m, parser.composeWithUpset());
-          //System.out.println("What I print is" + parser.composeMessage());
+          System.out.println("What I print is " + Integer.toString(m));
         }
       }
       myState = StateAC.WAIT_FOR_RECOVER_REP;
       dtLog.writeEntry(myState, parser.getTransaction()+";"+"UPset :"+upSet);
       //reconstruct the UP set
-     
+     //getMessagesAsParticipant();
   }
 	
 	/*
@@ -699,9 +704,9 @@ public class Node {
                  parser.setStateInfo(StateAC.COMMIT);
                  parser.setSourceinfo(Integer.toString(myID));
                  parser.setUpSet(upSet);
-                 Thread.sleep(getTimeOut()/2);
+                 Thread.sleep(getTimeOut()/4);
                  sendMsg(j, parser.composeWithUpset());
-                 System.out.println("I am helping others to revive commit" + Integer.toString(j)+ " " + parser.composeMessage()); 
+                 System.out.println("I am helping others to revive commit " + Integer.toString(j)+ " " + parser.composeMessage()); 
                }
         	 }
                //System.out.println("old decision list abort " + oldDecisionListAbort);
@@ -715,7 +720,7 @@ public class Node {
                      parser.setStateInfo(StateAC.ABORT);
                      parser.setUpSet(upSet);
                      parser.setSourceinfo(Integer.toString(myID));
-                     Thread.sleep(getTimeOut()/2);
+                     Thread.sleep(getTimeOut()/4);
                      sendMsg(j, parser.composeWithUpset());
                      
                      System.out.println("I am helping others to revive abort" + Integer.toString(j)+" " + parser.composeMessage()); 
@@ -1185,7 +1190,7 @@ public class Node {
                 oldDecisionList.add(currentAction);
              }
              else if (!atLeastOneBoolean){
-            	 //System.out.println("I am Here "+ Integer.toString(myID));
+            	 System.out.println("I am Here "+ Integer.toString(myID));
             	 //myState = StateAC.IDLE;
             	 break;
              }
@@ -1201,6 +1206,7 @@ public class Node {
 	 private void getMessagesAsParticipant() throws InterruptedException {
 		  //if(myID == 0)
 		  //System.out.println("Function call "+ Integer.toString(myID));
+		  int countForTotalFailure = 0;
           while(true){
 
   			 //first check to see if any incoming messages from controller
@@ -1215,10 +1221,10 @@ public class Node {
               while(System.currentTimeMillis() < startTime) {
                   Thread.sleep(smallTimeout);
                   messages = (nc.getReceivedMsgs());
-                  if(myID==0){
-                	  System.out.println("start receiving");
-                	  System.out.println("Receive message :  "+ messages);
-                  }
+                  //if(myID==0){
+                	//  System.out.println("start receiving");
+                	//  System.out.println("Receive message :  "+ messages);
+                  //}
                   for(String m :messages) {
                 	   atleastone = true;
                 	   currentAction = new MessageParser(m);
@@ -1290,16 +1296,22 @@ public class Node {
              // wait for recovery response from others
              // if there is no response until timeout, then total failure has happened
               else if(!atleastone && myState==StateAC.WAIT_FOR_RECOVER_REP){
-            	     System.out.println("Seems total failure happens");
-        	  	    // TotalFailure = true;
+            	    countForTotalFailure++;
+            	    if(countForTotalFailure==2){
+            	    	System.out.println("Seems total failure happens");
+            	     
+            	    	TotalFailure = true;
 
-            	     System.out.println("Total Failure!");
-        	  	     //TotalFailure = true;
+            	    	System.out.println("Total Failure!");
+            	    	//TotalFailure = true;
 
-        	  	     coordinatorWorking=false;
-        	  	     askOtherForHelp(recover.getPendingDecision());
+            	    	coordinatorWorking=false;
+            	    	askOtherForHelp(recover.getPendingDecision());
             	  	  
-            	  	  
+            	  		break;
+            	    }else{
+            	    	askOtherForHelp(recover.getPendingDecision());
+            	    }
               }
               
               else if (!atleastone){
@@ -1528,10 +1540,11 @@ public class Node {
 				
 			}else{
 				// fresh start
+				//if(n.myID==(n.coordinator+1)%n.viewNumber)
 				n.readActions("ActionList.txt");
 				while(true){
 					if(n.myID==(n.coordinator+1)%n.viewNumber){
-								
+						
 						if(!n.ActionList.isEmpty()){
 							MessageParser parser = n.ActionList.getFirst();
 							System.out.println("I am sending out" + parser.composeMessage()+" to "+Integer.toString(n.coordinator));
