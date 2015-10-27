@@ -1,0 +1,5 @@
+createProcesses 5
+wait 10
+remove SongB http://SongA.mysongs.com/
+wait 20
+killAll

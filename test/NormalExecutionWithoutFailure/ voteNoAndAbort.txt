@@ -1,3 +1,0 @@
-IcreateProcesses 5
-wait 40
-killAll

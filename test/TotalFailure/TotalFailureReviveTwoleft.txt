@@ -1,0 +1,15 @@
+createProcesses 5
+wait 3
+kill 1
+kill 2
+kill 3
+wait 20
+kill 0
+Kill 4
+wait 1
+revive 1
+wait 30
+revive 0
+revive 4
+wait 20
+killAll
