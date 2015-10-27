@@ -46,7 +46,7 @@ public class Node {
 	private Recovery recover = null;
 	private boolean pending = false;
 	private boolean coordinatorWorking = true;
-	private boolean TotalFailure = false;
+	private static boolean TotalFailure = false;
 	private ArrayList<HashSet<Integer>> recoveryUpSets = null;
 	private LinkedList<MessageParser> messageQueue;
 	private ArrayList<String> haltedMessages;
@@ -111,9 +111,11 @@ public class Node {
 			oldDecisionList = recover.getDecisionList();
 			playList = recover.getPlayList();
 			upSet = recover.getUpSet();
+			Rset.add(myID);
 			myState = recover.getLastState();
 			pending = recover.getPendingInfo();
 			recoveryUpSets = new ArrayList<HashSet<Integer>>();
+			recoveryUpSets.add(upSet);
 			TotalFailure = false;
 			//====DEBUG=========
 			System.out.println("last state is "+recover.getLastState().toString()+
@@ -146,11 +148,12 @@ public class Node {
       parser.setMessageHeader(TransitionMsg.RECOVER_REQ.toString());
       parser.setSourceinfo(Integer.toString(myID));
       parser.setUpSet(upSet);
+      System.out.println("Revive from deadth, ask others for help");
       // send everyone who is alive, just in my opnion
       for (int m : upSet){
         if(m!=myID){
           sendMsg(m, parser.composeWithUpset());
-          System.out.println("What I print is " + Integer.toString(m));
+          //System.out.println("What I print is " + Integer.toString(m));
         }
       }
       myState = StateAC.WAIT_FOR_RECOVER_REP;
@@ -777,13 +780,30 @@ public class Node {
         		 
         	 }
         	 System.out.println("The union set is"+ unionHashSet);
-        	 if(isSubset(unionHashSet, Rset))
+        	 if(isSubset(unionHashSet, Rset)){
         		 lastProces = true;
-         
+        	 	 System.out.println("I am one of the last processes"); 
+        	 }
          // If I am the last process to fail
+        	    
+        	 if(lastProces){ 
+        		 if(parser.getStateInfo()==StateAC.COMMIT){
+                     upSet = parser.getUpSet();
+                     myState = StateAC.COMMIT;
+                     dtLog.writeEntry(myState, parser.getTransaction()+"; UPset :"+ upSet);
+                     oldDecisionList.add(parser);
+                     pending = false;
+                     System.out.println("My pending decision is resolved commit");
+                 }else if (parser.getStateInfo()==StateAC.ABORT){
+               	  upSet = parser.getUpSet();
+                     myState = StateAC.ABORT;
+                     dtLog.writeEntry(myState, parser.getTransaction()+"; UPset :"+ upSet);
+                     oldDecisionListAbort.add(parser);
+                     pending = false;
+                     System.out.println("My pending decision is resolved abort");
+                 }
                  
-        	 if(lastProces){    
-        		 if(recover.getLastState()==StateAC.COMMIT){
+                 else if(recover.getLastState()==StateAC.COMMIT){
         			 upSet = Rset;
         			 myState = StateAC.COMMIT;
         			 dtLog.writeEntry(myState, recover.getDecisionList().get(recover.getDecisionList().size()-1).getTransaction()+"; UPset :"+ upSet);
@@ -797,6 +817,8 @@ public class Node {
         			 oldDecisionList.add(recover.getPendingDecision());
         			 TotalFailure = false;
         		 }
+        		 
+        		
              recoveryUpSets.clear();
              Rset.clear();
         	 }
@@ -1190,7 +1212,7 @@ public class Node {
                 oldDecisionList.add(currentAction);
              }
              else if (!atLeastOneBoolean){
-            	 System.out.println("I am Here "+ Integer.toString(myID));
+            	 //System.out.println("I am Here "+ Integer.toString(myID));
             	 //myState = StateAC.IDLE;
             	 break;
              }
@@ -1241,7 +1263,7 @@ public class Node {
                 	   }
                 	   else{
 
-                		   System.out.println("p"+myID+" received message :  "+ messages);
+                		   //System.out.println("p"+myID+" received message :  "+ messages);
 
                 		   processReceivedMsgAsParticipant(m);
                 		  
@@ -1298,17 +1320,35 @@ public class Node {
               else if(!atleastone && myState==StateAC.WAIT_FOR_RECOVER_REP){
             	    countForTotalFailure++;
             	    if(countForTotalFailure==2){
+            	    	coordinatorWorking=false;
             	    	System.out.println("Seems total failure happens");
             	     
             	    	TotalFailure = true;
 
             	    	System.out.println("Total Failure!");
             	    	//TotalFailure = true;
-
-            	    	coordinatorWorking=false;
-            	    	askOtherForHelp(recover.getPendingDecision());
-            	  	  
-            	  		break;
+            	    	if(upSet.size()==1){
+            	    		if(recover.getLastState()==StateAC.COMMIT){
+                   			 
+                   			 	myState = StateAC.COMMIT;
+                   			 	dtLog.writeEntry(myState, recover.getDecisionList().get(recover.getDecisionList().size()-1).getTransaction()+"; UPset :"+ upSet);
+                   			 	oldDecisionList.add(recover.getDecisionList().get(recover.getDecisionList().size()-1));
+                   			 	TotalFailure = false;
+                   			 	System.out.println("I am resolving the total failure");
+                   		 	} else {
+                   			 
+                   		 		myState = StateAC.ABORT;
+                   		 		dtLog.writeEntry(myState, recover.getPendingDecision().getTransaction()+"; UPset :"+upSet);
+                   		 		oldDecisionList.add(recover.getPendingDecision());
+                   		 		TotalFailure = false;
+                   		 	    System.out.println("I am resolving the total failure");
+                   		 	}
+            	    		countForTotalFailure = 0;
+            	    	}
+            	    	else{
+            	    		askOtherForHelp(recover.getPendingDecision());
+            	    	}
+            	  	
             	    }else{
             	    	askOtherForHelp(recover.getPendingDecision());
             	    }
