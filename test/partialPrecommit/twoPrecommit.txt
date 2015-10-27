@@ -1,0 +1,6 @@
+createProcesses 5
+partialMessage 0 6
+wait 4
+kill 0
+wait 30
+killAll
